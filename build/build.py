@@ -14,8 +14,9 @@ sys.path.insert(0, str(Path(__file__).parent))
 from q_easy import EASY
 from q_medium import MEDIUM
 from q_hard import HARD
+from q_more import EASY_MORE, MEDIUM_MORE, HARD_MORE
 
-ALL = EASY + MEDIUM + HARD
+ALL = EASY + EASY_MORE + MEDIUM + MEDIUM_MORE + HARD + HARD_MORE
 OUT = Path(__file__).parent.parent / "docs" / "js" / "questions.js"
 
 

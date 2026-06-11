@@ -1,6 +1,6 @@
 # ⚡ SQLForge — SQL Interview Prep for Data Engineers
 
-36 original, hand-built SQL interview questions in the style asked at top product
+48 original, hand-built SQL interview questions in the style asked at top product
 companies, with a real SQL engine (SQLite via WebAssembly) running entirely in the
 browser. Write a query, **Run** it against realistic seeded tables, **Submit** to
 have it validated against the reference solution — with order-insensitive result
@@ -13,15 +13,16 @@ tracking.
 
 | Difficulty | Count | Focus |
 |-----------|-------|-------|
-| Easy | 12 | Filtering, joins, aggregation, NULL handling, CASE |
-| Medium | 14 | Window functions, dedup, funnels, rates, relational division |
-| Hard | 10 | Gaps & islands, sessionization, retention cohorts, rolling windows, interval merging |
+| Easy | 16 | Filtering, joins, aggregation, NULL handling, CASE, set ops, strings |
+| Medium | 18 | Window functions, dedup, funnels, rates, pivots, percent-of-total |
+| Hard | 14 | Gaps & islands, sessionization, retention, recursive CTEs, interval merging |
 
 ## Project layout
 
 ```
 build/
   q_easy.py / q_medium.py / q_hard.py   # question source of truth
+  q_more.py                             # expansion pack (easy/medium/hard additions)
   build.py                              # validates every solution against SQLite,
                                         # then generates docs/js/questions.js
 docs/                                   # the static site (GitHub Pages root)
