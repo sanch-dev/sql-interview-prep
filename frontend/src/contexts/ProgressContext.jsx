@@ -3,13 +3,20 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
 
 const ProgressContext = createContext(null)
-const LOCAL_KEY = 'sqlforge_progress_v3'
+const LOCAL_KEY    = 'sqlforge_progress_v3'
+const REVIEWS_KEY  = 'sqlforge_review_marks'
 
 function readLocal() {
   try { return JSON.parse(localStorage.getItem(LOCAL_KEY) || '{}') } catch { return {} }
 }
 function writeLocal(data) {
   localStorage.setItem(LOCAL_KEY, JSON.stringify(data))
+}
+function readReviewMarks() {
+  try { return new Set(JSON.parse(localStorage.getItem(REVIEWS_KEY) || '[]')) } catch { return new Set() }
+}
+function writeReviewMarks(set) {
+  localStorage.setItem(REVIEWS_KEY, JSON.stringify([...set]))
 }
 
 function toDateStr(iso) {
@@ -25,7 +32,8 @@ function todayStr() {
 
 export function ProgressProvider({ children }) {
   const { user } = useAuth()
-  const [progress, setProgress] = useState({})
+  const [progress, setProgress]         = useState({})
+  const [reviewMarks, setReviewMarks]   = useState(() => readReviewMarks())
 
   const loadProgress = useCallback(async () => {
     if (!user || !supabase) {
@@ -73,7 +81,16 @@ export function ProgressProvider({ children }) {
     )
   }, [user])
 
-  const solvedCount   = useMemo(() => Object.values(progress).filter((p) => p.status === 'solved').length, [progress])
+  const toggleReviewMark = useCallback((questionId) => {
+    setReviewMarks((prev) => {
+      const next = new Set(prev)
+      next.has(questionId) ? next.delete(questionId) : next.add(questionId)
+      writeReviewMarks(next)
+      return next
+    })
+  }, [])
+
+  const solvedCount    = useMemo(() => Object.values(progress).filter((p) => p.status === 'solved').length,   [progress])
   const attemptedCount = useMemo(() => Object.values(progress).filter((p) => p.status === 'attempted').length, [progress])
 
   const todaySolved = useMemo(() => {
@@ -116,7 +133,7 @@ export function ProgressProvider({ children }) {
   }, [progress])
 
   return (
-    <ProgressContext.Provider value={{ progress, updateProgress, loadProgress, solvedCount, attemptedCount, streak, todaySolved }}>
+    <ProgressContext.Provider value={{ progress, updateProgress, loadProgress, solvedCount, attemptedCount, streak, todaySolved, reviewMarks, toggleReviewMark }}>
       {children}
     </ProgressContext.Provider>
   )

@@ -16,7 +16,7 @@ function statusIcon(status) {
 }
 
 export default function Sidebar({ questions, selectedId, onSelect }) {
-  const { progress, solvedCount } = useProgress()
+  const { progress, solvedCount, reviewMarks } = useProgress()
   const [search, setSearch]           = useState('')
   const [difficulty, setDifficulty]   = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
@@ -41,7 +41,7 @@ export default function Sidebar({ questions, selectedId, onSelect }) {
       if (category !== 'All' && q.category !== category) return false
       if (company !== 'All' && !(q.companies || []).includes(company)) return false
       const qStatus = progress[q.id]?.status || 'todo'
-      if (reviewMode) return qStatus === 'attempted'
+      if (reviewMode) return qStatus === 'attempted' || reviewMarks.has(q.id)
       if (statusFilter !== 'All' && qStatus !== statusFilter) return false
       if (search && !q.title.toLowerCase().includes(search.toLowerCase())) return false
       return true
@@ -56,12 +56,12 @@ export default function Sidebar({ questions, selectedId, onSelect }) {
     }
 
     return list
-  }, [questions, difficulty, category, company, statusFilter, reviewMode, search, progress])
+  }, [questions, difficulty, category, company, statusFilter, reviewMode, search, progress, reviewMarks])
 
   const total = questions.length
   const reviewCount = useMemo(
-    () => questions.filter((q) => (progress[q.id]?.status || 'todo') === 'attempted').length,
-    [questions, progress]
+    () => questions.filter((q) => (progress[q.id]?.status || 'todo') === 'attempted' || reviewMarks.has(q.id)).length,
+    [questions, progress, reviewMarks]
   )
 
   function toggleReviewMode() {
@@ -158,6 +158,7 @@ export default function Sidebar({ questions, selectedId, onSelect }) {
         )}
         {filtered.map((q) => {
           const qStatus = progress[q.id]?.status || 'todo'
+          const marked  = reviewMarks.has(q.id)
           return (
             <button
               key={q.id}
@@ -167,6 +168,7 @@ export default function Sidebar({ questions, selectedId, onSelect }) {
               <div className="q-item-main">
                 {statusIcon(qStatus)}
                 <span className="q-item-title">{q.title}</span>
+                {marked && <span className="q-item-bookmark" title="Marked for review">🔖</span>}
               </div>
               <span className={`badge badge-${q.difficulty.toLowerCase()}`}>{q.difficulty}</span>
             </button>

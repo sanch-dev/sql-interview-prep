@@ -18,7 +18,7 @@ function writeDraft(questionId, code) {
 }
 
 export default function Workspace({ question, allQuestions, onSelect, onBack, theme }) {
-  const { progress, updateProgress } = useProgress()
+  const { progress, updateProgress, reviewMarks, toggleReviewMark } = useProgress()
   const [results, setResults]     = useState(null)
   const [refResult, setRefResult] = useState(null)
   const [isRunning, setIsRunning] = useState(false)
@@ -73,6 +73,13 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
         <button className="btn btn-ghost btn-sm" onClick={onBack}>← All questions</button>
         <span className="workspace-pos">{currentIndex + 1} / {allQuestions.length}</span>
         <div className="workspace-nav-btns">
+          <button
+            className={`btn btn-sm ${reviewMarks.has(question.id) ? 'btn-review-active' : 'btn-ghost'}`}
+            onClick={() => toggleReviewMark(question.id)}
+            title={reviewMarks.has(question.id) ? 'Remove from review' : 'Mark for review'}
+          >
+            {reviewMarks.has(question.id) ? '🔖 Marked' : '🔖 Review'}
+          </button>
           <button className="btn btn-ghost btn-sm" onClick={() => prevQ && onSelect(prevQ)} disabled={!prevQ}>← Prev</button>
           <button className="btn btn-ghost btn-sm" onClick={() => nextQ && onSelect(nextQ)} disabled={!nextQ}>Next →</button>
         </div>
