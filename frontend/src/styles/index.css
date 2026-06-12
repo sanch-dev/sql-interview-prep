@@ -1016,6 +1016,28 @@ kbd {
 tr.diff-row-extra td { background: var(--error-bg) !important; color: var(--error); }
 tr.diff-row-match td { background: var(--success-bg) !important; }
 
+/* --- Dialect tabs ------------------------------------------------- */
+.editor-header { justify-content: space-between; }
+.editor-header-left { display: flex; align-items: center; gap: 10px; }
+.dialect-tabs {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.dialect-tab {
+  padding: 2px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-2);
+  transition: background 0.12s, color 0.12s;
+}
+.dialect-tab:hover { background: var(--bg-hover); color: var(--text); }
+.dialect-tab-active { background: var(--accent); color: #fff; font-weight: 600; }
+
 /* --- Timer -------------------------------------------------------- */
 .timer {
   display: flex;

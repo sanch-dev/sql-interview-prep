@@ -1,12 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
-import { sql } from '@codemirror/lang-sql'
+import { sql, MSSQL, SQLite } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { keymap } from '@codemirror/view'
 import { Prec } from '@codemirror/state'
 import ResultsPanel from './ResultsPanel'
 
 const TIMER_LIMITS = { Easy: 10 * 60, Medium: 15 * 60, Hard: 20 * 60 }
+
+const DIALECTS = [
+  { value: 'sqlite', label: 'SQLite', dialect: SQLite },
+  { value: 'mssql',  label: 'T-SQL',  dialect: MSSQL  },
+]
 
 function formatTime(s) {
   const m = Math.floor(s / 60)
@@ -15,8 +20,11 @@ function formatTime(s) {
 }
 
 export default function EditorPane({ question, initialValue, results, refResult, isRunning, onRun, onSubmit, onSave, theme }) {
-  const [code, setCode] = useState(initialValue || '')
+  const [code, setCode]           = useState(initialValue || '')
+  const [dialectKey, setDialectKey] = useState('sqlite')
   const isDark = theme === 'dark'
+
+  const currentDialect = DIALECTS.find((d) => d.value === dialectKey) || DIALECTS[0]
 
   // Timer state
   const [secondsLeft, setSecondsLeft] = useState(null)
@@ -60,12 +68,12 @@ export default function EditorPane({ question, initialValue, results, refResult,
   }
 
   const timerClass = secondsLeft !== null
-    ? secondsLeft <= 30 ? 'timer timer-red'
+    ? secondsLeft <= 30  ? 'timer timer-red'
     : secondsLeft <= 120 ? 'timer timer-orange'
     : 'timer'
     : ''
 
-  const handleRun = useCallback(() => { onRun(code) }, [code, onRun])
+  const handleRun    = useCallback(() => { onRun(code) },    [code, onRun])
   const handleSubmit = useCallback(() => { onSubmit(code) }, [code, onSubmit])
 
   const runKeymap = Prec.highest(
@@ -75,7 +83,7 @@ export default function EditorPane({ question, initialValue, results, refResult,
     ])
   )
 
-  // Auto-save on change
+  // Auto-save draft on change
   useEffect(() => {
     const t = setTimeout(() => onSave(code), 1500)
     return () => clearTimeout(t)
@@ -84,7 +92,21 @@ export default function EditorPane({ question, initialValue, results, refResult,
   return (
     <div className="editor-pane">
       <div className="editor-header">
-        <span className="editor-label">SQL Editor</span>
+        <div className="editor-header-left">
+          <span className="editor-label">SQL Editor</span>
+          <div className="dialect-tabs">
+            {DIALECTS.map((d) => (
+              <button
+                key={d.value}
+                className={`dialect-tab${dialectKey === d.value ? ' dialect-tab-active' : ''}`}
+                onClick={() => setDialectKey(d.value)}
+                title={d.value === 'mssql' ? 'T-SQL syntax highlighting (execution still runs on SQLite)' : 'Standard SQLite mode'}
+              >
+                {d.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="editor-actions">
           {secondsLeft !== null ? (
             <span className={timerClass}>
@@ -116,7 +138,7 @@ export default function EditorPane({ question, initialValue, results, refResult,
         <CodeMirror
           value={code}
           onChange={setCode}
-          extensions={[sql(), runKeymap]}
+          extensions={[sql({ dialect: currentDialect.dialect }), runKeymap]}
           theme={isDark ? oneDark : 'light'}
           basicSetup={{
             lineNumbers: true,

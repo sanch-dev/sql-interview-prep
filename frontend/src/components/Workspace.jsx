@@ -4,13 +4,27 @@ import { compareResults, executeSQL } from '../lib/sql'
 import EditorPane from './EditorPane'
 import ProblemPane from './ProblemPane'
 
+const DRAFTS_KEY = 'sqlforge_drafts'
+
+function readDraft(questionId) {
+  try { return JSON.parse(localStorage.getItem(DRAFTS_KEY) || '{}')[questionId] || '' } catch { return '' }
+}
+function writeDraft(questionId, code) {
+  try {
+    const all = JSON.parse(localStorage.getItem(DRAFTS_KEY) || '{}')
+    all[questionId] = code
+    localStorage.setItem(DRAFTS_KEY, JSON.stringify(all))
+  } catch {}
+}
+
 export default function Workspace({ question, allQuestions, onSelect, onBack, theme }) {
   const { progress, updateProgress } = useProgress()
-  const [results, setResults]       = useState(null)
-  const [refResult, setRefResult]   = useState(null)
-  const [isRunning, setIsRunning]   = useState(false)
+  const [results, setResults]     = useState(null)
+  const [refResult, setRefResult] = useState(null)
+  const [isRunning, setIsRunning] = useState(false)
 
-  const savedCode = progress[question.id]?.solution || ''
+  // Draft first, then last submitted solution
+  const savedCode = readDraft(question.id) || progress[question.id]?.solution || ''
 
   const currentIndex = allQuestions.findIndex((q) => q.id === question.id)
   const prevQ = currentIndex > 0 ? allQuestions[currentIndex - 1] : null
@@ -21,9 +35,9 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
     setRefResult(null)
     const result = await executeSQL(sql, question.schema)
     setResults({ ...result, type: 'run' })
-    if (!result.error) updateProgress(question.id, { status: 'attempted', solution: sql })
+    // Running does NOT mark the question attempted — only submit does
     setIsRunning(false)
-  }, [question, updateProgress])
+  }, [question])
 
   const handleSubmit = useCallback(async (sql) => {
     setIsRunning(true)
@@ -48,9 +62,10 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
     setIsRunning(false)
   }, [question, updateProgress])
 
-  const handleSave = useCallback((sql) => {
-    updateProgress(question.id, { status: progress[question.id]?.status || 'attempted', solution: sql })
-  }, [question.id, progress, updateProgress])
+  // Auto-save goes to a draft, never touches progress status
+  const handleSave = useCallback((code) => {
+    writeDraft(question.id, code)
+  }, [question.id])
 
   return (
     <div className="workspace">
