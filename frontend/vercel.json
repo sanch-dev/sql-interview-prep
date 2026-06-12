@@ -1,0 +1,6 @@
+{
+  "buildCommand": "cd .. && python3 build/build.py && cp docs/js/questions.js frontend/public/questions.js && cd frontend && npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm install",
+  "framework": "vite"
+}
