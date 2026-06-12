@@ -723,11 +723,26 @@ details[open] .details-summary::before { transform: rotate(90deg); }
 .sql-editor .cm-scroller { overflow: auto; }
 .cm-wrapper .cm-editor { font-family: var(--font-mono) !important; font-size: 13px !important; }
 
+/* --- Resize handle ------------------------------------------------ */
+.resize-handle {
+  height: 5px;
+  flex-shrink: 0;
+  background: var(--border);
+  cursor: ns-resize;
+  position: relative;
+  transition: background 0.15s;
+}
+.resize-handle::before {
+  content: '';
+  position: absolute;
+  inset: -4px 0;
+}
+.resize-handle:hover, .resize-handle:active { background: var(--accent); }
+
 /* --- Results panel ------------------------------------------------ */
 .results-panel {
-  height: 220px;
-  min-height: 220px;
-  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+  border-top: none;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -753,12 +768,17 @@ details[open] .details-summary::before { transform: rotate(90deg); }
   gap: 8px;
   border-bottom: 1px solid var(--border);
 }
-.results-error   { background: var(--error-bg);   color: var(--error);   border-bottom-color: var(--error-border); }
+.results-error   { background: var(--error-bg);   color: var(--error);   border-bottom-color: var(--error-border); align-items: flex-start; }
 .results-correct { background: var(--success-bg); color: var(--success); border-bottom-color: var(--success-border); }
 .results-wrong   { background: var(--error-bg);   color: var(--error);   border-bottom-color: var(--error-border); }
-.banner-icon     { font-size: 14px; }
+.banner-icon     { font-size: 14px; flex-shrink: 0; padding-top: 1px; }
 
-.error-text { font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; }
+.error-body { display: flex; flex-direction: column; gap: 4px; }
+.error-headline { font-weight: 700; font-size: 13px; }
+.error-text { font-family: var(--font-mono); font-size: 12px; white-space: pre-wrap; line-height: 1.6; }
+.error-raw { margin-top: 6px; }
+.error-raw summary { font-size: 11px; color: var(--error); opacity: 0.7; cursor: pointer; }
+.error-raw pre { font-family: var(--font-mono); font-size: 11px; opacity: 0.7; margin-top: 4px; white-space: pre-wrap; }
 
 .results-scroll { flex: 1; overflow: auto; }
 .results-table  { width: 100%; border-collapse: collapse; font-size: 12px; font-family: var(--font-mono); }

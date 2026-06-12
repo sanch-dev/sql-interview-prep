@@ -1,12 +1,16 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql, MSSQL, SQLite } from '@codemirror/lang-sql'
+import { EditorView } from '@codemirror/view'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { keymap } from '@codemirror/view'
 import { Prec } from '@codemirror/state'
 import ResultsPanel from './ResultsPanel'
 
 const TIMER_LIMITS = { Easy: 10 * 60, Medium: 15 * 60, Hard: 20 * 60 }
+const MIN_RESULTS_H = 140
+const MAX_RESULTS_H = 560
+const DEFAULT_RESULTS_H = 220
 
 const DIALECTS = [
   { value: 'sqlite', label: 'SQLite', dialect: SQLite },
@@ -21,65 +25,39 @@ function formatTime(s) {
 
 function adaptTSQLToSQLite(sqlText) {
   let out = sqlText
-
-  // Strip table hints: WITH (NOLOCK), WITH (READUNCOMMITTED), etc.
   out = out.replace(/\bWITH\s*\(\s*(?:NO(?:LOCK|EXPAND)|READ(?:UNCOMMITTED|COMMITTED|PAST)|UPDLOCK|ROWLOCK|TABLOCK|TABLOCKX|HOLDLOCK|XLOCK|PAGLOCK|NOWAIT)\s*\)/gi, '')
-
-  // SELECT TOP N → SELECT … LIMIT N
   let topN = null
-  out = out.replace(/\bSELECT\s+TOP\s+\(?\s*(\d+)\s*\)?\s+/gi, (_, n) => {
-    topN = n
-    return 'SELECT '
-  })
-  if (topN !== null) {
-    out = out.replace(/\bLIMIT\s+\d+\s*$/i, '').trimEnd() + ` LIMIT ${topN}`
-  }
-
-  // ISNULL(a, b) → COALESCE(a, b)
+  out = out.replace(/\bSELECT\s+TOP\s+\(?\s*(\d+)\s*\)?\s+/gi, (_, n) => { topN = n; return 'SELECT ' })
+  if (topN !== null) out = out.replace(/\bLIMIT\s+\d+\s*$/i, '').trimEnd() + ` LIMIT ${topN}`
   out = out.replace(/\bISNULL\s*\(/gi, 'COALESCE(')
-
-  // LEN(x) → LENGTH(x)
   out = out.replace(/\bLEN\s*\(/gi, 'LENGTH(')
-
-  // GETDATE() / GETUTCDATE() → DATE('now')
   out = out.replace(/\bGET(?:UTC)?DATE\s*\(\s*\)/gi, "DATE('now')")
-
-  // CHARINDEX(needle, haystack) → INSTR(haystack, needle)  [arg order flipped]
   out = out.replace(/\bCHARINDEX\s*\(\s*([^,]+),\s*([^)]+)\)/gi, (_, needle, haystack) => `INSTR(${haystack.trim()}, ${needle.trim()})`)
-
   return out
 }
 
 export default function EditorPane({ question, initialValue, results, refResult, isRunning, sampleTables = {}, onRun, onSubmit, onSave, theme }) {
   const [code, setCode]             = useState(initialValue || '')
   const [dialectKey, setDialectKey] = useState('sqlite')
+  const [resultsHeight, setResultsHeight] = useState(DEFAULT_RESULTS_H)
   const isDark = theme === 'dark'
 
   const currentDialect = DIALECTS.find((d) => d.value === dialectKey) || DIALECTS[0]
+  const tableNames = useMemo(() => Object.keys(sampleTables), [sampleTables])
 
-  // Build schema for CodeMirror autocomplete from actual question tables
   const cmSchema = useMemo(() => {
     const schema = {}
-    Object.entries(sampleTables).forEach(([name, { columns }]) => {
-      schema[name] = columns
-    })
+    Object.entries(sampleTables).forEach(([name, { columns }]) => { schema[name] = columns })
     return schema
   }, [sampleTables])
 
-  // Timer state
-  const [secondsLeft, setSecondsLeft] = useState(null)
-  const [timerActive, setTimerActive] = useState(false)
+  // Timer
+  const [secondsLeft, setSecondsLeft]   = useState(null)
+  const [timerActive, setTimerActive]   = useState(false)
   const [timerExpired, setTimerExpired] = useState(false)
 
-  useEffect(() => {
-    setCode(initialValue || '')
-  }, [question.id, initialValue])
-
-  useEffect(() => {
-    setSecondsLeft(null)
-    setTimerActive(false)
-    setTimerExpired(false)
-  }, [question.id])
+  useEffect(() => { setCode(initialValue || '') }, [question.id, initialValue])
+  useEffect(() => { setSecondsLeft(null); setTimerActive(false); setTimerExpired(false) }, [question.id])
 
   useEffect(() => {
     if (!timerActive || secondsLeft === null) return
@@ -88,32 +66,40 @@ export default function EditorPane({ question, initialValue, results, refResult,
     return () => clearTimeout(t)
   }, [timerActive, secondsLeft])
 
-  function startTimer() {
-    setSecondsLeft(TIMER_LIMITS[question.difficulty] || 15 * 60)
-    setTimerActive(true)
-    setTimerExpired(false)
-  }
+  function startTimer() { setSecondsLeft(TIMER_LIMITS[question.difficulty] || 15 * 60); setTimerActive(true); setTimerExpired(false) }
   function resetTimer() { setSecondsLeft(null); setTimerActive(false); setTimerExpired(false) }
 
   const timerClass = secondsLeft !== null
     ? secondsLeft <= 30  ? 'timer timer-red'
     : secondsLeft <= 120 ? 'timer timer-orange'
-    : 'timer'
-    : ''
+    : 'timer' : ''
 
-  function prepare(rawCode) {
-    return dialectKey === 'mssql' ? adaptTSQLToSQLite(rawCode) : rawCode
+  // Drag-to-resize results panel
+  function startResize(e) {
+    e.preventDefault()
+    const startY = e.clientY
+    const startH = resultsHeight
+    function onMove(e) {
+      const delta = startY - e.clientY
+      setResultsHeight(Math.max(MIN_RESULTS_H, Math.min(MAX_RESULTS_H, startH + delta)))
+    }
+    function onUp() {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
   }
+
+  function prepare(raw) { return dialectKey === 'mssql' ? adaptTSQLToSQLite(raw) : raw }
 
   const handleRun    = useCallback(() => { onRun(prepare(code)) },    [code, onRun, dialectKey])
   const handleSubmit = useCallback(() => { onSubmit(prepare(code)) }, [code, onSubmit, dialectKey])
 
-  const runKeymap = Prec.highest(
-    keymap.of([
-      { key: 'Ctrl-Enter', run: () => { handleRun(); return true } },
-      { key: 'Mod-Enter',  run: () => { handleRun(); return true } },
-    ])
-  )
+  const runKeymap = Prec.highest(keymap.of([
+    { key: 'Ctrl-Enter', run: () => { handleRun(); return true } },
+    { key: 'Mod-Enter',  run: () => { handleRun(); return true } },
+  ]))
 
   useEffect(() => {
     const t = setTimeout(() => onSave(code), 1500)
@@ -136,7 +122,7 @@ export default function EditorPane({ question, initialValue, results, refResult,
                 key={d.value}
                 className={`dialect-tab${dialectKey === d.value ? ' dialect-tab-active' : ''}`}
                 onClick={() => setDialectKey(d.value)}
-                title={d.value === 'mssql' ? 'T-SQL mode — common T-SQL syntax adapted for SQLite execution' : 'Standard SQLite mode'}
+                title={d.value === 'mssql' ? 'T-SQL mode — common syntax auto-adapted for SQLite execution' : 'Standard SQLite mode'}
               >
                 {d.label}
               </button>
@@ -162,7 +148,7 @@ export default function EditorPane({ question, initialValue, results, refResult,
 
       {dialectKey === 'mssql' && (
         <div className="tsql-notice">
-          T-SQL mode: <code>WITH(NOLOCK)</code>, <code>TOP N</code>, <code>ISNULL</code>, <code>LEN</code>, <code>GETDATE</code>, <code>CHARINDEX</code> are auto-adapted for SQLite execution.
+          T-SQL mode — <code>WITH(NOLOCK)</code>, <code>TOP N</code>, <code>ISNULL</code>, <code>LEN</code>, <code>GETDATE</code>, <code>CHARINDEX</code> auto-adapted for SQLite.
         </div>
       )}
 
@@ -176,19 +162,23 @@ export default function EditorPane({ question, initialValue, results, refResult,
         <CodeMirror
           value={code}
           onChange={setCode}
-          extensions={[sqlExtension, runKeymap]}
+          extensions={[sqlExtension, runKeymap, EditorView.lineWrapping]}
           theme={isDark ? oneDark : 'light'}
-          basicSetup={{
-            lineNumbers: true,
-            highlightActiveLine: true,
-            foldGutter: false,
-            autocompletion: true,
-          }}
+          basicSetup={{ lineNumbers: true, highlightActiveLine: true, foldGutter: false, autocompletion: true }}
           className="sql-editor"
         />
       </div>
 
-      <ResultsPanel result={results} refResult={refResult} isRunning={isRunning} />
+      <div className="resize-handle" onMouseDown={startResize} title="Drag to resize" />
+
+      <ResultsPanel
+        result={results}
+        refResult={refResult}
+        isRunning={isRunning}
+        tableNames={tableNames}
+        dialectKey={dialectKey}
+        height={resultsHeight}
+      />
     </div>
   )
 }
