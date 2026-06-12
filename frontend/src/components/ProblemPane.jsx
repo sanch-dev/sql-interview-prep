@@ -1,16 +1,44 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useProgress } from '../contexts/ProgressContext'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
 
+const NOTES_KEY = 'sqlforge_notes'
+
+function readNotes() {
+  try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '{}') } catch { return {} }
+}
+
 export default function ProblemPane({ question, theme }) {
   const { progress } = useProgress()
   const status = progress[question.id]?.status || 'todo'
-  const [hintsShown, setHintsShown] = useState(0)
+  const [hintsShown, setHintsShown]   = useState(0)
   const [solutionOpen, setSolutionOpen] = useState(false)
+  const [notes, setNotes]             = useState('')
 
   const isDark = theme === 'dark'
+
+  // Load notes when question changes
+  useEffect(() => {
+    setHintsShown(0)
+    setSolutionOpen(false)
+    setNotes(readNotes()[question.id] || '')
+  }, [question.id])
+
+  // Auto-save notes
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const all = readNotes()
+      if (notes.trim()) {
+        all[question.id] = notes
+      } else {
+        delete all[question.id]
+      }
+      localStorage.setItem(NOTES_KEY, JSON.stringify(all))
+    }, 1500)
+    return () => clearTimeout(t)
+  }, [notes, question.id])
 
   return (
     <div className="problem-pane">
@@ -82,6 +110,18 @@ export default function ProblemPane({ question, theme }) {
             />
           </div>
         )}
+      </div>
+
+      <div className="notes-section">
+        <h3 className="section-heading">My Notes</h3>
+        <textarea
+          className="notes-textarea"
+          placeholder="Write your own explanation, key insights, or things to remember…"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          rows={4}
+        />
+        {notes.trim() && <p className="notes-saved">Auto-saved locally</p>}
       </div>
 
       {question.source_url && (

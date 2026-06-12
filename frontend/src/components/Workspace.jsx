@@ -6,8 +6,9 @@ import ProblemPane from './ProblemPane'
 
 export default function Workspace({ question, allQuestions, onSelect, onBack, theme }) {
   const { progress, updateProgress } = useProgress()
-  const [results, setResults] = useState(null)
-  const [isRunning, setIsRunning] = useState(false)
+  const [results, setResults]       = useState(null)
+  const [refResult, setRefResult]   = useState(null)
+  const [isRunning, setIsRunning]   = useState(false)
 
   const savedCode = progress[question.id]?.solution || ''
 
@@ -17,6 +18,7 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
 
   const handleRun = useCallback(async (sql) => {
     setIsRunning(true)
+    setRefResult(null)
     const result = await executeSQL(sql, question.schema)
     setResults({ ...result, type: 'run' })
     if (!result.error) updateProgress(question.id, { status: 'attempted', solution: sql })
@@ -25,19 +27,21 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
 
   const handleSubmit = useCallback(async (sql) => {
     setIsRunning(true)
-    const [userResult, refResult] = await Promise.all([
+    const [userResult, ref] = await Promise.all([
       executeSQL(sql, question.schema),
       executeSQL(question.solution, question.schema),
     ])
 
     if (userResult.error) {
       setResults({ ...userResult, type: 'submit' })
+      setRefResult(null)
       setIsRunning(false)
       return
     }
 
-    const correct = compareResults(userResult, refResult, question.order_matters)
+    const correct = compareResults(userResult, ref, question.order_matters)
     setResults({ ...userResult, type: 'submit', correct })
+    setRefResult(correct ? null : ref)
 
     const status = correct ? 'solved' : 'attempted'
     updateProgress(question.id, { status, solution: sql })
@@ -66,6 +70,7 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
           question={question}
           initialValue={savedCode}
           results={results}
+          refResult={refResult}
           isRunning={isRunning}
           onRun={handleRun}
           onSubmit={handleSubmit}

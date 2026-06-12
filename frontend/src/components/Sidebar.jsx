@@ -17,28 +17,60 @@ function statusIcon(status) {
 
 export default function Sidebar({ questions, selectedId, onSelect }) {
   const { progress, solvedCount } = useProgress()
-  const [search, setSearch] = useState('')
-  const [difficulty, setDifficulty] = useState('All')
+  const [search, setSearch]           = useState('')
+  const [difficulty, setDifficulty]   = useState('All')
   const [statusFilter, setStatusFilter] = useState('All')
+  const [category, setCategory]       = useState('All')
+  const [company, setCompany]         = useState('All')
+  const [reviewMode, setReviewMode]   = useState(false)
 
   const categories = useMemo(
     () => ['All', ...new Set(questions.map((q) => q.category))].sort((a, b) => a === 'All' ? -1 : a.localeCompare(b)),
     [questions]
   )
-  const [category, setCategory] = useState('All')
+
+  const companies = useMemo(() => {
+    const all = new Set()
+    questions.forEach((q) => (q.companies || []).forEach((c) => all.add(c)))
+    return ['All', ...Array.from(all).sort()]
+  }, [questions])
 
   const filtered = useMemo(() => {
-    return questions.filter((q) => {
+    let list = questions.filter((q) => {
       if (difficulty !== 'All' && q.difficulty !== difficulty) return false
       if (category !== 'All' && q.category !== category) return false
+      if (company !== 'All' && !(q.companies || []).includes(company)) return false
       const qStatus = progress[q.id]?.status || 'todo'
+      if (reviewMode) return qStatus === 'attempted'
       if (statusFilter !== 'All' && qStatus !== statusFilter) return false
       if (search && !q.title.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-  }, [questions, difficulty, category, statusFilter, search, progress])
+
+    if (reviewMode) {
+      list = [...list].sort((a, b) => {
+        const aDate = progress[a.id]?.updatedAt || ''
+        const bDate = progress[b.id]?.updatedAt || ''
+        return aDate.localeCompare(bDate)
+      })
+    }
+
+    return list
+  }, [questions, difficulty, category, company, statusFilter, reviewMode, search, progress])
 
   const total = questions.length
+  const reviewCount = useMemo(
+    () => questions.filter((q) => (progress[q.id]?.status || 'todo') === 'attempted').length,
+    [questions, progress]
+  )
+
+  function toggleReviewMode() {
+    setReviewMode((v) => !v)
+    if (!reviewMode) {
+      setStatusFilter('All')
+      setSearch('')
+    }
+  }
 
   function pickRandom() {
     if (!filtered.length) return
@@ -65,6 +97,7 @@ export default function Sidebar({ questions, selectedId, onSelect }) {
             placeholder="Search questions…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            disabled={reviewMode}
           />
         </div>
 
@@ -84,19 +117,44 @@ export default function Sidebar({ questions, selectedId, onSelect }) {
           <select className="filter-select" value={category} onChange={(e) => setCategory(e.target.value)}>
             {categories.map((c) => <option key={c} value={c}>{c}</option>)}
           </select>
-          <select className="filter-select" value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+          <select
+            className="filter-select"
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            disabled={reviewMode}
+          >
             {STATUSES.map((s) => <option key={s.value} value={s.value}>{s.label}</option>)}
           </select>
         </div>
 
+        <div className="filter-row">
+          <select className="filter-select" value={company} onChange={(e) => setCompany(e.target.value)}>
+            {companies.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+
         <div className="sidebar-actions">
+          <button
+            className={`btn btn-sm w-full ${reviewMode ? 'btn-primary' : 'btn-ghost'}`}
+            onClick={toggleReviewMode}
+            title="Show questions you got wrong, oldest first"
+          >
+            📚 Review{reviewCount > 0 ? ` (${reviewCount})` : ''}
+          </button>
           <button className="btn btn-ghost btn-sm w-full" onClick={pickRandom}>🎲 Random</button>
         </div>
       </div>
 
       <nav className="question-list">
+        {reviewMode && (
+          <div className="review-mode-banner">
+            Review mode — {filtered.length} question{filtered.length !== 1 ? 's' : ''} to revisit, oldest first
+          </div>
+        )}
         {filtered.length === 0 && (
-          <p className="empty-list">No questions match your filters.</p>
+          <p className="empty-list">
+            {reviewMode ? 'No questions to review — keep practicing!' : 'No questions match your filters.'}
+          </p>
         )}
         {filtered.map((q) => {
           const qStatus = progress[q.id]?.status || 'todo'

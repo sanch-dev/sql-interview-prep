@@ -1,9 +1,11 @@
 import { useAuth } from '../contexts/AuthContext'
 import { useProgress } from '../contexts/ProgressContext'
 
+const DAILY_GOAL = 3
+
 export default function Header({ theme, onToggleTheme }) {
   const { user, signOut } = useAuth()
-  const { solvedCount } = useProgress()
+  const { solvedCount, streak, todaySolved } = useProgress()
   const totalQuestions = (window.QUESTIONS || []).length
 
   return (
@@ -17,14 +19,25 @@ export default function Header({ theme, onToggleTheme }) {
         </div>
 
         <div className="header-right">
-          {user && (
-            <span className="header-progress">
-              <span className="progress-solved">{solvedCount}</span>
-              <span className="progress-sep">/</span>
-              <span className="progress-total">{totalQuestions}</span>
-              <span className="progress-label">solved</span>
+          {streak > 0 && (
+            <span className="streak-badge" title={`${streak}-day streak`}>
+              🔥 {streak}
             </span>
           )}
+
+          <span className="header-progress" title={`${todaySolved}/${DAILY_GOAL} daily goal · ${solvedCount} total`}>
+            <span className="progress-solved">{todaySolved}</span>
+            <span className="progress-sep">/</span>
+            <span className="progress-total">{DAILY_GOAL}</span>
+            <span className="progress-label">today</span>
+          </span>
+
+          <span className="header-progress">
+            <span className="progress-solved">{solvedCount}</span>
+            <span className="progress-sep">/</span>
+            <span className="progress-total">{totalQuestions}</span>
+            <span className="progress-label">solved</span>
+          </span>
 
           <button
             className="icon-btn"
