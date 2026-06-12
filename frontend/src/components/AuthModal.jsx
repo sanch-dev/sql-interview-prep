@@ -19,8 +19,13 @@ export default function AuthModal({ mode, onClose, onSwitchMode }) {
         await signIn(email, password)
         onClose()
       } else {
-        await signUp(email, password)
-        setInfo('Account created! Check your email to confirm, then sign in.')
+        const session = await signUp(email, password)
+        if (session) {
+          // Email confirmation disabled — signed in immediately
+          onClose()
+        } else {
+          setInfo('Account created! Check your email to confirm, then sign in.')
+        }
       }
     } catch (err) {
       setError(err.message || 'Something went wrong.')
