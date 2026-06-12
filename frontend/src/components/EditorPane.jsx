@@ -160,11 +160,17 @@ export default function EditorPane({ question, initialValue, results, refResult,
 
       <div className="cm-wrapper">
         <CodeMirror
+          key={`${question.id}-${Object.keys(cmSchema).length > 0}`}
           value={code}
           onChange={setCode}
           extensions={[sqlExtension, runKeymap, EditorView.lineWrapping]}
           theme={isDark ? oneDark : 'light'}
-          basicSetup={{ lineNumbers: true, highlightActiveLine: true, foldGutter: false, autocompletion: true }}
+          basicSetup={{
+            lineNumbers: true,
+            highlightActiveLine: true,
+            foldGutter: false,
+            autocompletion: false, // let sql() handle completions with the real schema
+          }}
           className="sql-editor"
         />
       </div>
