@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QueryLab — Hands-on SQL Practice</title>
+<meta name="description" content="QueryLab: hands-on SQL practice in your browser. Solve interview-style questions in a real SQL IDE with instant validation, hints, and full solutions.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>">
+<script>
+  /* set theme before first paint to avoid a flash of the wrong theme */
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("sqlforge_theme") || "light"
+  );
+</script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-bolt">🧪</span>
+    <span class="brand-name">Query<em>Lab</em></span>
+    <span class="brand-tag">Hands-on SQL practice</span>
+  </div>
+  <div class="topbar-right">
+    <div class="topbar-stats" id="topbarStats"></div>
+    <button class="btn btn-small btn-mock" id="mockBtn" title="3 questions, 30 minutes, no hints">🎤 Mock interview</button>
+    <button class="btn btn-ghost btn-small" id="themeBtn" title="Toggle light / dark theme"></button>
+  </div>
+</header>
+
+<div class="mock-banner hidden" id="mockBanner">
+  <span class="mock-label">🎤 Mock interview</span>
+  <span id="mockProgress"></span>
+  <span class="mock-timer" id="mockTimer">30:00</span>
+  <span class="mock-spacer"></span>
+  <button class="btn btn-ghost btn-small" id="mockSkipBtn">Skip question →</button>
+  <button class="btn btn-ghost btn-small" id="mockEndBtn">End interview</button>
+</div>
+
+<div class="layout">
+
+  <!-- ===== Sidebar: question list ===== -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-controls">
+      <input type="search" id="searchBox" placeholder="Search questions…" autocomplete="off">
+      <div class="filter-row" id="difficultyFilters">
+        <button class="chip chip-all active" data-diff="All">All</button>
+        <button class="chip chip-easy" data-diff="Easy">Easy</button>
+        <button class="chip chip-medium" data-diff="Medium">Medium</button>
+        <button class="chip chip-hard" data-diff="Hard">Hard</button>
+      </div>
+      <div class="filter-row filter-row-secondary">
+        <select id="categoryFilter"><option value="All">All topics</option></select>
+        <select id="statusFilter">
+          <option value="All">Any status</option>
+          <option value="solved">Solved</option>
+          <option value="attempted">Attempted</option>
+          <option value="todo">Not started</option>
+        </select>
+      </div>
+      <div class="filter-row">
+        <button class="btn btn-ghost btn-small" id="randomBtn" title="Pick a random unsolved question">🎲 Random unsolved</button>
+        <button class="btn btn-ghost btn-small" id="resetProgressBtn" title="Clear all saved progress">Reset progress</button>
+      </div>
+    </div>
+    <nav class="question-list" id="questionList" aria-label="Question list"></nav>
+  </aside>
+
+  <!-- ===== Main panel ===== -->
+  <main class="main" id="mainPanel">
+
+    <section class="welcome" id="welcomePanel">
+      <h1>🧪 Welcome to QueryLab</h1>
+      <p class="welcome-sub">48 hand-built SQL interview questions in the style asked at top product
+      companies — with a real SQL engine running in your browser.</p>
+      <div class="welcome-grid" id="welcomeGrid"></div>
+      <div id="mockHistory" class="mock-history"></div>
+      <div class="welcome-tips">
+        <h3>How it works</h3>
+        <ul>
+          <li>Pick a question — every one ships with a realistic schema and seed data, loaded into a real SQLite database in your browser.</li>
+          <li><strong>Run</strong> (<kbd>⌘</kbd><kbd>Enter</kbd> / <kbd>Ctrl</kbd><kbd>Enter</kbd>) executes your query and shows the result.</li>
+          <li><strong>Submit</strong> checks your output against the reference solution — syntax errors, wrong columns, missing rows and value mismatches are all reported.</li>
+          <li>Stuck? Reveal hints one at a time, or open the full solution with an explanation of the pattern being tested.</li>
+          <li>Progress and drafts save automatically in your browser.</li>
+        </ul>
+        <h3>Suggested path</h3>
+        <p>Warm up on the easy set (filters, joins, aggregates) → drill mediums until window functions feel
+        automatic → then grind the hard set: gaps &amp; islands, sessionization, retention, interval merging.
+        Those six patterns cover the large majority of senior SQL interview screens.</p>
+      </div>
+    </section>
+
+    <section class="workspace hidden" id="workspace">
+      <div class="question-pane" id="questionPane">
+        <div class="q-header">
+          <h2 id="qTitle"></h2>
+          <div class="q-meta" id="qMeta"></div>
+        </div>
+        <div class="q-description" id="qDescription"></div>
+
+        <div class="schema-block">
+          <div class="schema-head">
+            <h3>📋 Tables &amp; sample data</h3>
+            <button class="btn btn-ghost btn-small" id="toggleSchemaSql">View CREATE / INSERT SQL</button>
+          </div>
+          <div id="schemaTables"></div>
+          <pre class="schema-sql hidden" id="schemaSql"></pre>
+        </div>
+
+        <div class="assist-block">
+          <div class="assist-buttons">
+            <button class="btn btn-ghost" id="hintBtn">💡 Hint <span id="hintCount"></span></button>
+            <button class="btn btn-ghost" id="solutionBtn">🔓 Show solution</button>
+          </div>
+          <ol class="hint-list" id="hintList"></ol>
+          <div class="solution-block hidden" id="solutionBlock">
+            <h3>Reference solution</h3>
+            <pre class="solution-sql" id="solutionSql"></pre>
+            <div class="solution-explanation" id="solutionExplanation"></div>
+            <button class="btn btn-ghost btn-small" id="copySolutionBtn">Copy to editor</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="editor-pane">
+        <div class="editor-toolbar">
+          <span class="editor-label">SQL Editor <span class="dialect-badge" title="Powered by SQLite running in your browser via WebAssembly">SQLite</span></span>
+          <div class="editor-actions">
+            <button class="btn btn-ghost btn-small" id="autocompleteBtn" title="Suggest keywords, table and column names as you type (Ctrl+Space to trigger manually)"></button>
+            <button class="btn btn-ghost btn-small" id="formatResetBtn" title="Restore the starter comment">Clear</button>
+            <button class="btn btn-run" id="runBtn" title="Cmd/Ctrl + Enter">▶ Run</button>
+            <button class="btn btn-submit" id="submitBtn" title="Cmd/Ctrl + Shift + Enter">✓ Submit</button>
+          </div>
+        </div>
+        <div class="editor-host" id="editorHost"></div>
+
+        <div class="result-pane" id="resultPane">
+          <div class="verdict hidden" id="verdict"></div>
+          <div class="result-tabs hidden" id="resultTabs">
+            <button class="tab active" data-tab="yours">Your output</button>
+            <button class="tab" data-tab="expected">Expected output</button>
+          </div>
+          <div class="result-body" id="resultYours"></div>
+          <div class="result-body hidden" id="resultExpected"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="modal-overlay hidden" id="scorecardModal">
+  <div class="modal">
+    <h2>🎤 Interview scorecard</h2>
+    <div id="scorecardBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-run" id="scorecardCloseBtn">Close</button>
+    </div>
+  </div>
+</div>
+
+<footer class="footer">
+  <span>QueryLab — original questions for hands-on SQL practice. Queries run locally in your browser; nothing is uploaded.</span>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/sql-wasm.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/sql/sql.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/placeholder.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/sql-hint.min.js"></script>
+<script src="js/questions.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
