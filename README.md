@@ -1,8 +1,7 @@
-# ⚡ SQLForge — SQL Interview Prep for Data Engineers
+# 🧪 QueryLab — Hands-on SQL Practice
 
-48 original, hand-built SQL interview questions in the style asked at top product
-companies, with a real SQL engine (SQLite via WebAssembly) running entirely in the
-browser. Write a query, **Run** it against realistic seeded tables, **Submit** to
+48 original, hand-built SQL interview-style questions, with a real SQL engine
+(SQLite via WebAssembly) running entirely in the browser. Write a query, **Run** it against realistic seeded tables, **Submit** to
 have it validated against the reference solution — with order-insensitive result
 comparison, numeric tolerance, progressive hints, full explanations, and progress
 tracking.

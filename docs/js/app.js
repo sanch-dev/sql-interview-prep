@@ -1,4 +1,6 @@
-/* SQLForge — app logic.
+/* QueryLab — app logic.
+ * (localStorage keys keep the legacy "sqlforge_" prefix so existing
+ * users' progress survives the rebrand.)
  * Queries run in an in-browser SQLite (sql.js / WebAssembly).
  * Validation: the user's query and the reference solution both run against a
  * fresh database seeded with the question's schema; result sets are compared
@@ -593,7 +595,7 @@
 
   // Custom hint: SQL keywords + the current question's tables and columns.
   // After "tablename." only that table's columns are offered.
-  function sqlforgeHint(cm) {
+  function queryLabHint(cm) {
     const cur = cm.getCursor();
     const line = cm.getLine(cur.line);
     let start = cur.ch;
@@ -634,7 +636,7 @@
     const cur = cm.getCursor();
     const line = cm.getLine(cur.line);
     if (/--/.test(line.slice(0, cur.ch))) return;
-    cm.showHint({ hint: sqlforgeHint, completeSingle: false });
+    cm.showHint({ hint: queryLabHint, completeSingle: false });
   }
 
   function updateAutocompleteBtn() {
