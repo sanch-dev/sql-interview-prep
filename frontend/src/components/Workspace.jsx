@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useProgress } from '../contexts/ProgressContext'
-import { compareResults, executeSQL } from '../lib/sql'
+import { compareResults, executeSQL, getTableData } from '../lib/sql'
 import EditorPane from './EditorPane'
 import ProblemPane from './ProblemPane'
 
@@ -19,23 +19,28 @@ function writeDraft(questionId, code) {
 
 export default function Workspace({ question, allQuestions, onSelect, onBack, theme }) {
   const { progress, updateProgress, reviewMarks, toggleReviewMark } = useProgress()
-  const [results, setResults]     = useState(null)
-  const [refResult, setRefResult] = useState(null)
-  const [isRunning, setIsRunning] = useState(false)
+  const [results, setResults]         = useState(null)
+  const [refResult, setRefResult]     = useState(null)
+  const [isRunning, setIsRunning]     = useState(false)
+  const [sampleTables, setSampleTables] = useState({})
 
-  // Draft first, then last submitted solution
   const savedCode = readDraft(question.id) || progress[question.id]?.solution || ''
 
   const currentIndex = allQuestions.findIndex((q) => q.id === question.id)
   const prevQ = currentIndex > 0 ? allQuestions[currentIndex - 1] : null
   const nextQ = currentIndex < allQuestions.length - 1 ? allQuestions[currentIndex + 1] : null
 
+  // Load sample data once per question
+  useEffect(() => {
+    setSampleTables({})
+    getTableData(question.schema).then(setSampleTables)
+  }, [question.id, question.schema])
+
   const handleRun = useCallback(async (sql) => {
     setIsRunning(true)
     setRefResult(null)
     const result = await executeSQL(sql, question.schema)
     setResults({ ...result, type: 'run' })
-    // Running does NOT mark the question attempted — only submit does
     setIsRunning(false)
   }, [question])
 
@@ -55,14 +60,13 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
 
     const correct = compareResults(userResult, ref, question.order_matters)
     setResults({ ...userResult, type: 'submit', correct })
-    setRefResult(correct ? null : ref)
+    setRefResult(ref) // always show expected output on submit
 
     const status = correct ? 'solved' : 'attempted'
     updateProgress(question.id, { status, solution: sql })
     setIsRunning(false)
   }, [question, updateProgress])
 
-  // Auto-save goes to a draft, never touches progress status
   const handleSave = useCallback((code) => {
     writeDraft(question.id, code)
   }, [question.id])
@@ -86,7 +90,7 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
       </div>
 
       <div className="workspace-split">
-        <ProblemPane question={question} theme={theme} />
+        <ProblemPane question={question} theme={theme} sampleTables={sampleTables} />
         <div className="split-divider" />
         <EditorPane
           question={question}
@@ -94,6 +98,7 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
           results={results}
           refResult={refResult}
           isRunning={isRunning}
+          sampleTables={sampleTables}
           onRun={handleRun}
           onSubmit={handleSubmit}
           onSave={handleSave}

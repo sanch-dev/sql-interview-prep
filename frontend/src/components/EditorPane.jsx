@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql, MSSQL, SQLite } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
@@ -19,12 +19,52 @@ function formatTime(s) {
   return `${m}:${sec.toString().padStart(2, '0')}`
 }
 
-export default function EditorPane({ question, initialValue, results, refResult, isRunning, onRun, onSubmit, onSave, theme }) {
-  const [code, setCode]           = useState(initialValue || '')
+function adaptTSQLToSQLite(sqlText) {
+  let out = sqlText
+
+  // Strip table hints: WITH (NOLOCK), WITH (READUNCOMMITTED), etc.
+  out = out.replace(/\bWITH\s*\(\s*(?:NO(?:LOCK|EXPAND)|READ(?:UNCOMMITTED|COMMITTED|PAST)|UPDLOCK|ROWLOCK|TABLOCK|TABLOCKX|HOLDLOCK|XLOCK|PAGLOCK|NOWAIT)\s*\)/gi, '')
+
+  // SELECT TOP N → SELECT … LIMIT N
+  let topN = null
+  out = out.replace(/\bSELECT\s+TOP\s+\(?\s*(\d+)\s*\)?\s+/gi, (_, n) => {
+    topN = n
+    return 'SELECT '
+  })
+  if (topN !== null) {
+    out = out.replace(/\bLIMIT\s+\d+\s*$/i, '').trimEnd() + ` LIMIT ${topN}`
+  }
+
+  // ISNULL(a, b) → COALESCE(a, b)
+  out = out.replace(/\bISNULL\s*\(/gi, 'COALESCE(')
+
+  // LEN(x) → LENGTH(x)
+  out = out.replace(/\bLEN\s*\(/gi, 'LENGTH(')
+
+  // GETDATE() / GETUTCDATE() → DATE('now')
+  out = out.replace(/\bGET(?:UTC)?DATE\s*\(\s*\)/gi, "DATE('now')")
+
+  // CHARINDEX(needle, haystack) → INSTR(haystack, needle)  [arg order flipped]
+  out = out.replace(/\bCHARINDEX\s*\(\s*([^,]+),\s*([^)]+)\)/gi, (_, needle, haystack) => `INSTR(${haystack.trim()}, ${needle.trim()})`)
+
+  return out
+}
+
+export default function EditorPane({ question, initialValue, results, refResult, isRunning, sampleTables = {}, onRun, onSubmit, onSave, theme }) {
+  const [code, setCode]             = useState(initialValue || '')
   const [dialectKey, setDialectKey] = useState('sqlite')
   const isDark = theme === 'dark'
 
   const currentDialect = DIALECTS.find((d) => d.value === dialectKey) || DIALECTS[0]
+
+  // Build schema for CodeMirror autocomplete from actual question tables
+  const cmSchema = useMemo(() => {
+    const schema = {}
+    Object.entries(sampleTables).forEach(([name, { columns }]) => {
+      schema[name] = columns
+    })
+    return schema
+  }, [sampleTables])
 
   // Timer state
   const [secondsLeft, setSecondsLeft] = useState(null)
@@ -35,37 +75,25 @@ export default function EditorPane({ question, initialValue, results, refResult,
     setCode(initialValue || '')
   }, [question.id, initialValue])
 
-  // Reset timer when question changes
   useEffect(() => {
     setSecondsLeft(null)
     setTimerActive(false)
     setTimerExpired(false)
   }, [question.id])
 
-  // Countdown tick
   useEffect(() => {
     if (!timerActive || secondsLeft === null) return
-    if (secondsLeft === 0) {
-      setTimerActive(false)
-      setTimerExpired(true)
-      return
-    }
+    if (secondsLeft === 0) { setTimerActive(false); setTimerExpired(true); return }
     const t = setTimeout(() => setSecondsLeft((s) => s - 1), 1000)
     return () => clearTimeout(t)
   }, [timerActive, secondsLeft])
 
   function startTimer() {
-    const limit = TIMER_LIMITS[question.difficulty] || 15 * 60
-    setSecondsLeft(limit)
+    setSecondsLeft(TIMER_LIMITS[question.difficulty] || 15 * 60)
     setTimerActive(true)
     setTimerExpired(false)
   }
-
-  function resetTimer() {
-    setSecondsLeft(null)
-    setTimerActive(false)
-    setTimerExpired(false)
-  }
+  function resetTimer() { setSecondsLeft(null); setTimerActive(false); setTimerExpired(false) }
 
   const timerClass = secondsLeft !== null
     ? secondsLeft <= 30  ? 'timer timer-red'
@@ -73,8 +101,12 @@ export default function EditorPane({ question, initialValue, results, refResult,
     : 'timer'
     : ''
 
-  const handleRun    = useCallback(() => { onRun(code) },    [code, onRun])
-  const handleSubmit = useCallback(() => { onSubmit(code) }, [code, onSubmit])
+  function prepare(rawCode) {
+    return dialectKey === 'mssql' ? adaptTSQLToSQLite(rawCode) : rawCode
+  }
+
+  const handleRun    = useCallback(() => { onRun(prepare(code)) },    [code, onRun, dialectKey])
+  const handleSubmit = useCallback(() => { onSubmit(prepare(code)) }, [code, onSubmit, dialectKey])
 
   const runKeymap = Prec.highest(
     keymap.of([
@@ -83,11 +115,15 @@ export default function EditorPane({ question, initialValue, results, refResult,
     ])
   )
 
-  // Auto-save draft on change
   useEffect(() => {
     const t = setTimeout(() => onSave(code), 1500)
     return () => clearTimeout(t)
   }, [code, onSave])
+
+  const sqlExtension = useMemo(
+    () => sql({ dialect: currentDialect.dialect, schema: cmSchema }),
+    [currentDialect.dialect, cmSchema]
+  )
 
   return (
     <div className="editor-pane">
@@ -100,7 +136,7 @@ export default function EditorPane({ question, initialValue, results, refResult,
                 key={d.value}
                 className={`dialect-tab${dialectKey === d.value ? ' dialect-tab-active' : ''}`}
                 onClick={() => setDialectKey(d.value)}
-                title={d.value === 'mssql' ? 'T-SQL syntax highlighting (execution still runs on SQLite)' : 'Standard SQLite mode'}
+                title={d.value === 'mssql' ? 'T-SQL mode — common T-SQL syntax adapted for SQLite execution' : 'Standard SQLite mode'}
               >
                 {d.label}
               </button>
@@ -119,14 +155,16 @@ export default function EditorPane({ question, initialValue, results, refResult,
             </button>
           )}
           <kbd className="shortcut-hint">Ctrl+Enter to run</kbd>
-          <button className="btn btn-outline btn-sm" onClick={handleRun} disabled={isRunning}>
-            ▶ Run
-          </button>
-          <button className="btn btn-primary btn-sm" onClick={handleSubmit} disabled={isRunning}>
-            ✓ Submit
-          </button>
+          <button className="btn btn-outline btn-sm" onClick={handleRun} disabled={isRunning}>▶ Run</button>
+          <button className="btn btn-primary btn-sm" onClick={handleSubmit} disabled={isRunning}>✓ Submit</button>
         </div>
       </div>
+
+      {dialectKey === 'mssql' && (
+        <div className="tsql-notice">
+          T-SQL mode: <code>WITH(NOLOCK)</code>, <code>TOP N</code>, <code>ISNULL</code>, <code>LEN</code>, <code>GETDATE</code>, <code>CHARINDEX</code> are auto-adapted for SQLite execution.
+        </div>
+      )}
 
       {timerExpired && (
         <div className="timer-expired-banner">
@@ -138,7 +176,7 @@ export default function EditorPane({ question, initialValue, results, refResult,
         <CodeMirror
           value={code}
           onChange={setCode}
-          extensions={[sql({ dialect: currentDialect.dialect }), runKeymap]}
+          extensions={[sqlExtension, runKeymap]}
           theme={isDark ? oneDark : 'light'}
           basicSetup={{
             lineNumbers: true,

@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { useProgress } from '../contexts/ProgressContext'
-import { getTableData } from '../lib/sql'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
@@ -18,26 +17,21 @@ function ddlOnly(schema) {
     .trim()
 }
 
-export default function ProblemPane({ question, theme }) {
+export default function ProblemPane({ question, theme, sampleTables = {} }) {
   const { progress } = useProgress()
   const status = progress[question.id]?.status || 'todo'
   const [hintsShown, setHintsShown]     = useState(0)
   const [solutionOpen, setSolutionOpen] = useState(false)
   const [notes, setNotes]               = useState('')
-  const [sampleTables, setSampleTables] = useState({})
 
   const isDark = theme === 'dark'
 
-  // Reset state + load notes + load sample data when question changes
   useEffect(() => {
     setHintsShown(0)
     setSolutionOpen(false)
     setNotes(readNotes()[question.id] || '')
-    setSampleTables({})
-    getTableData(question.schema).then(setSampleTables)
-  }, [question.id, question.schema])
+  }, [question.id])
 
-  // Auto-save notes
   useEffect(() => {
     const t = setTimeout(() => {
       const all = readNotes()

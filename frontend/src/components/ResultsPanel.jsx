@@ -85,6 +85,7 @@ export default function ResultsPanel({ result, refResult, isRunning }) {
   const isSubmit = result.type === 'submit'
   const correct  = result.correct
   const showDiff = isSubmit && !correct && refResult && !refResult.error
+  const showExpected = isSubmit && correct && refResult && !refResult.error
 
   const allColumns = showDiff
     ? [...new Set([...result.columns, ...refResult.columns])]
@@ -111,17 +112,8 @@ export default function ResultsPanel({ result, refResult, isRunning }) {
             <span className="diff-legend-item diff-legend-match">Correct row</span>
           </div>
           <div className="diff-tables">
-            <ResultTable
-              columns={allColumns}
-              rows={result.rows}
-              label="Your output"
-              rowTags={rowTags}
-            />
-            <ResultTable
-              columns={refResult.columns}
-              rows={refResult.rows}
-              label="Expected output"
-            />
+            <ResultTable columns={allColumns} rows={result.rows} label="Your output" rowTags={rowTags} />
+            <ResultTable columns={refResult.columns} rows={refResult.rows} label="Expected output" />
           </div>
         </div>
       ) : (
@@ -150,6 +142,13 @@ export default function ResultsPanel({ result, refResult, isRunning }) {
               </table>
               <div className="results-footer">{result.rows.length} row{result.rows.length !== 1 ? 's' : ''}</div>
             </>
+          )}
+
+          {showExpected && (
+            <details className="expected-details">
+              <summary className="expected-summary">Expected output</summary>
+              <ResultTable columns={refResult.columns} rows={refResult.rows} />
+            </details>
           )}
         </div>
       )}
