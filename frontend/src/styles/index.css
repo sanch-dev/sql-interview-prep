@@ -567,7 +567,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 }
 .problem-description strong { color: var(--text); font-weight: 600; }
 
-.schema-details { border: 1px solid var(--border); border-radius: var(--r-lg); overflow: hidden; }
+.schema-details { border: 1px solid var(--border); border-radius: var(--r-lg); }
 .details-summary {
   padding: 10px 14px;
   background: var(--bg-subtle);
@@ -579,7 +579,9 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
   display: flex;
   align-items: center;
   gap: 6px;
+  border-radius: var(--r-lg);
 }
+details[open] .details-summary { border-radius: var(--r-lg) var(--r-lg) 0 0; }
 .details-summary::before { content: '▶'; font-size: 10px; color: var(--text-3); transition: transform 0.15s; }
 details[open] .details-summary::before { transform: rotate(90deg); }
 .schema-code {

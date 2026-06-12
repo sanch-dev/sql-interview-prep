@@ -74,13 +74,10 @@ export default function ProblemPane({ question, theme }) {
         dangerouslySetInnerHTML={{ __html: question.description }}
       />
 
-      <details className="schema-details" open>
-        <summary className="details-summary">Database Schema</summary>
-        <pre className="schema-code">{ddlOnly(question.schema)}</pre>
-
-        {Object.keys(sampleTables).length > 0 && (
+      {Object.keys(sampleTables).length > 0 && (
+        <details className="schema-details" open>
+          <summary className="details-summary">Sample Data</summary>
           <div className="sample-data">
-            <div className="sample-data-label">Sample data</div>
             {Object.entries(sampleTables).map(([name, { columns, rows }]) => (
               <div key={name} className="sample-table-wrap">
                 <div className="sample-table-name">{name}</div>
@@ -105,7 +102,12 @@ export default function ProblemPane({ question, theme }) {
               </div>
             ))}
           </div>
-        )}
+        </details>
+      )}
+
+      <details className="schema-details">
+        <summary className="details-summary">Database Schema</summary>
+        <pre className="schema-code">{ddlOnly(question.schema)}</pre>
       </details>
 
       <div className="hints-section">
