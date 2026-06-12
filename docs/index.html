@@ -8,6 +8,7 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -110,6 +111,7 @@
         <div class="editor-toolbar">
           <span class="editor-label">SQL Editor <span class="dialect-badge" title="Powered by SQLite running in your browser via WebAssembly">SQLite</span></span>
           <div class="editor-actions">
+            <button class="btn btn-ghost btn-small" id="autocompleteBtn" title="Suggest keywords, table and column names as you type (Ctrl+Space to trigger manually)"></button>
             <button class="btn btn-ghost btn-small" id="formatResetBtn" title="Restore the starter comment">Clear</button>
             <button class="btn btn-run" id="runBtn" title="Cmd/Ctrl + Enter">▶ Run</button>
             <button class="btn btn-submit" id="submitBtn" title="Cmd/Ctrl + Shift + Enter">✓ Submit</button>
@@ -142,6 +144,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/display/placeholder.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/sql-hint.min.js"></script>
 <script src="js/questions.js"></script>
 <script src="js/app.js"></script>
 </body>

@@ -17,6 +17,44 @@
   let current = null;        // current question object
   let filters = { diff: "All", cat: "All", status: "All", search: "" };
   let lastExpected = null;   // cached expected result for the tab view
+  let hintTables = {};       // {table: [columns]} for the current question's schema
+  let autocompleteOn = localStorage.getItem("sqlforge_autocomplete") !== "0";
+
+  /* ---------------- dialect detection ----------------
+   * The IDE runs SQLite. When a query errors, check it for constructs from
+   * other dialects and explain the SQLite equivalent instead of leaving the
+   * user with a bare "syntax error".
+   */
+  const DIALECT_PATTERNS = [
+    [/\bwith\s*\(\s*nolock\s*\)/i,
+     "<code>WITH (NOLOCK)</code> is SQL Server (T-SQL) syntax. Table hints don't exist in SQLite — and aren't needed here, each run gets its own private database. Just remove it."],
+    [/\bselect\s+top\s+\d+/i,
+     "<code>SELECT TOP n</code> is SQL Server syntax. In SQLite (and Postgres/MySQL), put <code>LIMIT n</code> at the end of the query."],
+    [/\bgetdate\s*\(/i,
+     "<code>GETDATE()</code> is SQL Server. Use <code>date('now')</code> or <code>datetime('now')</code> in SQLite."],
+    [/\bisnull\s*\(/i,
+     "<code>ISNULL(a, b)</code> is SQL Server. Use <code>COALESCE(a, b)</code> (portable) or SQLite's <code>IFNULL(a, b)</code>."],
+    [/\bnvl\s*\(/i,
+     "<code>NVL</code> is Oracle. Use <code>COALESCE</code>."],
+    [/\bdatediff\s*\(/i,
+     "<code>DATEDIFF</code> is SQL Server/MySQL. In SQLite, difference in days is <code>julianday(a) - julianday(b)</code>."],
+    [/\bdateadd\s*\(/i,
+     "<code>DATEADD</code> is SQL Server. In SQLite use date modifiers: <code>date(d, '+1 day')</code>, <code>date(d, '-3 month')</code>."],
+    [/\bdate_trunc\s*\(/i,
+     "<code>DATE_TRUNC</code> is Postgres/Snowflake. In SQLite use <code>strftime</code> — e.g. <code>strftime('%Y-%m', d)</code> for month grain."],
+    [/\b(date_format|str_to_date)\s*\(/i,
+     "<code>DATE_FORMAT</code>/<code>STR_TO_DATE</code> are MySQL. Use <code>strftime</code> in SQLite."],
+    [/::\s*[a-z]+/i,
+     "The <code>::type</code> cast operator is Postgres. Use <code>CAST(x AS TYPE)</code> — or multiply by <code>1.0</code> to force float division."],
+    [/\bqualify\b/i,
+     "<code>QUALIFY</code> is Snowflake/BigQuery. In SQLite, put the window function in a CTE and filter it in the outer SELECT."],
+  ];
+
+  function dialectNotes(sql) {
+    const notes = DIALECT_PATTERNS.filter(([re]) => re.test(sql)).map(([, msg]) => msg);
+    if (!notes.length) return "";
+    return notes.map((n) => `<div class="dialect-note">💡 ${n}</div>`).join("");
+  }
 
   /* ---------------- progress ---------------- */
   function loadProgress() {
@@ -284,7 +322,7 @@
       byId("resultYours").innerHTML = resultTable(res, { label: "your output" });
     } catch (e) {
       showVerdict("fail", "SQL error", `<pre>${escapeHtml(String(e.message || e))}</pre>` +
-        "Fix the syntax/runtime error and run again.");
+        dialectNotes(sql) + "Fix the syntax/runtime error and run again.");
       byId("resultYours").innerHTML = "";
     } finally {
       if (db) db.close();
@@ -306,7 +344,8 @@
     } catch (e) {
       if (db) db.close();
       setStatus(current.id, "attempted");
-      showVerdict("fail", "SQL error", `<pre>${escapeHtml(String(e.message || e))}</pre>`);
+      showVerdict("fail", "SQL error",
+        `<pre>${escapeHtml(String(e.message || e))}</pre>` + dialectNotes(sql));
       byId("resultYours").innerHTML = "";
       return;
     }
@@ -350,6 +389,7 @@
   /* ---------------- question view ---------------- */
   function renderSchemaTables(q) {
     const host = byId("schemaTables");
+    hintTables = {};
     try {
       const db = freshDb(q.schema);
       const tables = db.exec(
@@ -360,6 +400,7 @@
         tables[0].values.forEach(([name]) => {
           const res = db.exec(`SELECT * FROM "${name}"`);
           const r = res[0] || { columns: [], values: [] };
+          hintTables[name] = r.columns;
           html += '<div class="table-card"><div class="table-card-head">' +
             escapeHtml(name) +
             ` <span class="row-count">· ${r.values.length} rows</span></div>` +
@@ -416,6 +457,9 @@
 
     byId("welcomePanel").classList.add("hidden");
     byId("workspace").classList.remove("hidden");
+    // CodeMirror was created while the workspace was display:none and
+    // mis-measures its gutter; re-measure now that it's visible.
+    setTimeout(() => editor.refresh(), 0);
 
     byId("qTitle").textContent = q.title;
     const p = loadProgress();
@@ -507,6 +551,7 @@
       mode: "text/x-sql",
       theme: "material-darker",
       lineNumbers: true,
+      lineWrapping: true,
       matchBrackets: true,
       autoCloseBrackets: true,
       indentUnit: 2,
@@ -517,14 +562,94 @@
         "Ctrl-Enter": handleRun,
         "Shift-Cmd-Enter": handleSubmit,
         "Shift-Ctrl-Enter": handleSubmit,
+        "Ctrl-Space": triggerHint,
       },
     });
     editor.on("change", () => {
       if (current) localStorage.setItem(LS_DRAFT + current.id, editor.getValue());
     });
+    // live suggestions: pop the hint list while typing identifiers (if enabled)
+    editor.on("inputRead", (cm, change) => {
+      if (!autocompleteOn) return;
+      if (cm.state.completionActive) return;
+      const ch = change.text && change.text.length === 1 ? change.text[0] : "";
+      if (/^[a-zA-Z_.]$/.test(ch)) triggerHint(cm);
+    });
+  }
+
+  const SQL_KEYWORDS = [
+    "SELECT", "FROM", "WHERE", "GROUP BY", "ORDER BY", "HAVING", "LIMIT", "OFFSET",
+    "JOIN", "LEFT JOIN", "INNER JOIN", "CROSS JOIN", "ON", "AS", "AND", "OR", "NOT",
+    "IN", "IS NULL", "IS NOT NULL", "DISTINCT", "BETWEEN", "LIKE", "EXISTS",
+    "CASE", "WHEN", "THEN", "ELSE", "END", "WITH", "RECURSIVE",
+    "UNION", "UNION ALL", "INTERSECT", "EXCEPT",
+    "COUNT", "SUM", "AVG", "MIN", "MAX", "ROUND", "ABS", "COALESCE", "IFNULL",
+    "CAST", "LOWER", "UPPER", "LENGTH", "SUBSTR", "TRIM", "REPLACE",
+    "OVER", "PARTITION BY", "ROW_NUMBER", "RANK", "DENSE_RANK", "NTILE",
+    "LAG", "LEAD", "FIRST_VALUE", "LAST_VALUE",
+    "ROWS BETWEEN", "UNBOUNDED PRECEDING", "PRECEDING", "CURRENT ROW", "FOLLOWING",
+    "STRFTIME", "JULIANDAY", "DATE", "DATETIME", "ASC", "DESC", "NULL",
+  ];
+
+  // Custom hint: SQL keywords + the current question's tables and columns.
+  // After "tablename." only that table's columns are offered.
+  function sqlforgeHint(cm) {
+    const cur = cm.getCursor();
+    const line = cm.getLine(cur.line);
+    let start = cur.ch;
+    while (start > 0 && /\w/.test(line.charAt(start - 1))) start--;
+    const word = line.slice(start, cur.ch).toLowerCase();
+    const before = line.slice(0, start);
+
+    let candidates;
+    const dotMatch = before.match(/(\w+)\.$/);
+    if (dotMatch && hintTables[dotMatch[1]]) {
+      candidates = hintTables[dotMatch[1]].slice();
+    } else {
+      const schema = new Set();
+      Object.keys(hintTables).forEach((t) => {
+        schema.add(t);
+        hintTables[t].forEach((c) => schema.add(c));
+      });
+      candidates = [...schema, ...SQL_KEYWORDS];
+    }
+
+    const seen = new Set();
+    const list = candidates.filter((x) => {
+      const k = x.toLowerCase();
+      if (!k.startsWith(word) || k === word || seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+    return {
+      list: list,
+      from: CodeMirror.Pos(cur.line, start),
+      to: CodeMirror.Pos(cur.line, cur.ch),
+    };
+  }
+
+  function triggerHint(cm) {
+    cm = cm || editor;
+    // don't pop suggestions inside a -- comment
+    const cur = cm.getCursor();
+    const line = cm.getLine(cur.line);
+    if (/--/.test(line.slice(0, cur.ch))) return;
+    cm.showHint({ hint: sqlforgeHint, completeSingle: false });
+  }
+
+  function updateAutocompleteBtn() {
+    byId("autocompleteBtn").textContent = autocompleteOn ? "✨ Suggestions: On" : "✨ Suggestions: Off";
+    byId("autocompleteBtn").classList.toggle("toggle-off", !autocompleteOn);
   }
 
   function initButtons() {
+    updateAutocompleteBtn();
+    byId("autocompleteBtn").addEventListener("click", () => {
+      autocompleteOn = !autocompleteOn;
+      localStorage.setItem("sqlforge_autocomplete", autocompleteOn ? "1" : "0");
+      updateAutocompleteBtn();
+      editor.focus();
+    });
     byId("runBtn").addEventListener("click", handleRun);
     byId("submitBtn").addEventListener("click", handleSubmit);
     byId("hintBtn").addEventListener("click", revealNextHint);
