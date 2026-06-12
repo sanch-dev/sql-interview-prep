@@ -28,9 +28,19 @@
   </div>
   <div class="topbar-right">
     <div class="topbar-stats" id="topbarStats"></div>
+    <button class="btn btn-small btn-mock" id="mockBtn" title="3 questions, 30 minutes, no hints">🎤 Mock interview</button>
     <button class="btn btn-ghost btn-small" id="themeBtn" title="Toggle light / dark theme"></button>
   </div>
 </header>
+
+<div class="mock-banner hidden" id="mockBanner">
+  <span class="mock-label">🎤 Mock interview</span>
+  <span id="mockProgress"></span>
+  <span class="mock-timer" id="mockTimer">30:00</span>
+  <span class="mock-spacer"></span>
+  <button class="btn btn-ghost btn-small" id="mockSkipBtn">Skip question →</button>
+  <button class="btn btn-ghost btn-small" id="mockEndBtn">End interview</button>
+</div>
 
 <div class="layout">
 
@@ -69,6 +79,7 @@
       <p class="welcome-sub">48 hand-built SQL interview questions in the style asked at top product
       companies — with a real SQL engine running in your browser.</p>
       <div class="welcome-grid" id="welcomeGrid"></div>
+      <div id="mockHistory" class="mock-history"></div>
       <div class="welcome-tips">
         <h3>How it works</h3>
         <ul>
@@ -142,6 +153,16 @@
     </section>
 
   </main>
+</div>
+
+<div class="modal-overlay hidden" id="scorecardModal">
+  <div class="modal">
+    <h2>🎤 Interview scorecard</h2>
+    <div id="scorecardBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-run" id="scorecardCloseBtn">Close</button>
+    </div>
+  </div>
 </div>
 
 <footer class="footer">

@@ -218,52 +218,141 @@
     }));
   }
 
+  /* ---------------- diagnostics ----------------
+   * On a wrong answer, don't just say "wrong" — figure out HOW it's wrong
+   * and say something a good interviewer/tutor would say.
+   */
+
+  // rows of `a` not covered by `b`, as multisets (duplicates respected)
+  function multisetDiff(a, b) {
+    const counts = new Map();
+    b.forEach((r) => {
+      const k = rowKey(r);
+      counts.set(k, (counts.get(k) || 0) + 1);
+    });
+    const out = [];
+    a.forEach((r) => {
+      const k = rowKey(r);
+      const c = counts.get(k) || 0;
+      if (c > 0) counts.set(k, c - 1);
+      else out.push(r);
+    });
+    return out;
+  }
+
+  function sameSequence(a, b) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++)
+      for (let j = 0; j < a[i].length; j++)
+        if (!cellsEqual(a[i][j], b[i][j])) return false;
+    return true;
+  }
+
+  // multiset equality after rounding numbers to integers — catches
+  // "right formula, wrong decimal precision" mistakes
+  function coarselyEqual(a, b) {
+    const coarseKey = (row) =>
+      JSON.stringify(row.map((v) => (typeof v === "number" ? Math.round(v) : v === null ? null : String(v))));
+    const ka = a.map(coarseKey).sort();
+    const kb = b.map(coarseKey).sort();
+    return ka.length === kb.length && ka.every((k, i) => k === kb[i]);
+  }
+
+  function diagTable(label, columns, rows, total) {
+    let html = `<div class="table-card diag-card"><div class="table-card-head">${escapeHtml(label)}` +
+      ` <span class="row-count">· showing ${rows.length} of ${total}</span></div>` +
+      '<div class="table-scroll"><table class="data-table"><thead><tr>' +
+      columns.map((c) => `<th>${escapeHtml(c)}</th>`).join("") +
+      "</tr></thead><tbody>";
+    rows.forEach((r) => {
+      html += "<tr>" + r.map((v) =>
+        v === null ? '<td class="null-val">NULL</td>' : `<td>${escapeHtml(String(v))}</td>`
+      ).join("") + "</tr>";
+    });
+    return html + "</tbody></table></div></div>";
+  }
+
   function compareResults(user, expected, orderMatters) {
     if (expected.columns.length !== user.columns.length) {
       return {
         pass: false,
-        reason: `Wrong number of columns: your query returned ${user.columns.length} ` +
-                `(${user.columns.join(", ") || "none"}), expected ${expected.columns.length} ` +
-                `(${expected.columns.join(", ")}).`,
+        html: `<ul class="diag-list"><li>Wrong number of columns: you returned ` +
+          `<strong>${user.columns.length}</strong> (${escapeHtml(user.columns.join(", ") || "none")}), ` +
+          `expected <strong>${expected.columns.length}</strong> (${escapeHtml(expected.columns.join(", "))}). ` +
+          `Re-read the "Return columns" line of the question.</li></ul>`,
       };
     }
-    if (user.values.length !== expected.values.length) {
+
+    const missing = multisetDiff(expected.values, user.values); // expected rows you lack
+    const extra = multisetDiff(user.values, expected.values);   // your rows that shouldn't exist
+
+    if (!missing.length && !extra.length) {
+      if (orderMatters && !sameSequence(user.values, expected.values)) {
+        return {
+          pass: false,
+          html: `<ul class="diag-list"><li><strong>So close —</strong> every row and value is correct, ` +
+            `but the <strong>order</strong> is wrong, and this question checks ordering. ` +
+            `Compare your ORDER BY against the spec (direction and tie-breakers).</li></ul>`,
+        };
+      }
+      const colMismatch = expected.columns.some(
+        (c, i) => c.toLowerCase() !== String(user.columns[i] || "").toLowerCase()
+      );
       return {
-        pass: false,
-        reason: `Wrong number of rows: your query returned ${user.values.length}, ` +
-                `expected ${expected.values.length}. Check your filters, joins (duplicates?), and grouping.`,
+        pass: true,
+        note: colMismatch
+          ? `Note: values match, but your column names (${user.columns.join(", ")}) differ from the spec ` +
+            `(${expected.columns.join(", ")}). In an interview, alias your columns as asked.`
+          : null,
       };
     }
-    let uRows = user.values, eRows = expected.values;
-    if (!orderMatters) {
-      uRows = [...uRows].sort((a, b) => (rowKey(a) < rowKey(b) ? -1 : 1));
-      eRows = [...eRows].sort((a, b) => (rowKey(a) < rowKey(b) ? -1 : 1));
+
+    const findings = [];
+
+    if (user.values.length === 0) {
+      findings.push("Your query returned <strong>no rows</strong> — a filter or join condition is " +
+        "eliminating everything. Run pieces of the query (just the FROM/JOIN, then add WHERE) to find where rows vanish.");
+    } else if (user.values.length === expected.values.length) {
+      findings.push(`Row counts match (<strong>${user.values.length}</strong>), but some values differ.`);
+    } else {
+      findings.push(`Row count: you returned <strong>${user.values.length}</strong>, ` +
+        `expected <strong>${expected.values.length}</strong>.`);
     }
-    for (let i = 0; i < eRows.length; i++) {
-      for (let j = 0; j < eRows[i].length; j++) {
-        if (!cellsEqual(uRows[i][j], eRows[i][j])) {
-          const colName = expected.columns[j] || `column ${j + 1}`;
-          return {
-            pass: false,
-            reason: orderMatters
-              ? `Row ${i + 1}, column "${colName}": got ${fmtVal(uRows[i][j])}, expected ${fmtVal(eRows[i][j])}. ` +
-                `(Row order is checked for this question — verify your ORDER BY.)`
-              : `Mismatch in column "${colName}": got ${fmtVal(uRows[i][j])} where ${fmtVal(eRows[i][j])} was expected ` +
-                `(rows compared order-insensitively).`,
-          };
-        }
+
+    const expectedKeys = new Set(expected.values.map(rowKey));
+    if (!missing.length && extra.length && extra.every((r) => expectedKeys.has(rowKey(r)))) {
+      findings.push("Every unexpected row is a <strong>duplicate of a correct row</strong> — a join is " +
+        "probably fanning out (one-to-many match). Consider COUNT(DISTINCT ...), pre-aggregating in a CTE, " +
+        "or SELECT DISTINCT.");
+    }
+
+    if (missing.length && extra.length && coarselyEqual(user.values, expected.values)) {
+      findings.push("The values are <strong>nearly right</strong> — they differ only in decimal precision. " +
+        "Check the rounding the question asks for (e.g. <code>ROUND(x, 1)</code>) and watch integer division: " +
+        "use <code>100.0</code>, not <code>100</code>.");
+    }
+
+    if (expected.values.length === 1 && expected.columns.length === 1 && user.values.length === 1) {
+      const u = user.values[0][0], e = expected.values[0][0];
+      if (typeof u === "number" && typeof e === "number" && Math.abs(u * 100 - e) < 0.5) {
+        findings.push("Your value looks like a <strong>fraction</strong> — the question wants a " +
+          "<strong>percentage</strong>. Multiply by <code>100.0</code>.");
       }
     }
-    const colMismatch = expected.columns.some(
-      (c, i) => c.toLowerCase() !== String(user.columns[i] || "").toLowerCase()
-    );
-    return {
-      pass: true,
-      note: colMismatch
-        ? `Note: values match, but your column names (${user.columns.join(", ")}) differ from the spec ` +
-          `(${expected.columns.join(", ")}). In an interview, alias your columns as asked.`
-        : null,
-    };
+
+    const missingHasNull = missing.some((r) => r.some((v) => v === null));
+    const extraHasNull = extra.some((r) => r.some((v) => v === null));
+    if (missingHasNull !== extraHasNull && (missingHasNull || extraHasNull)) {
+      findings.push("The differing rows involve <strong>NULL</strong>s — check your NULL handling " +
+        "(<code>IS NULL</code> vs <code>= NULL</code>, inner vs LEFT JOIN, aggregates skipping NULLs).");
+    }
+
+    let html = `<ul class="diag-list">${findings.map((f) => `<li>${f}</li>`).join("")}</ul>`;
+    if (missing.length)
+      html += diagTable("Missing — expected but not in your output", expected.columns, missing.slice(0, 3), missing.length);
+    if (extra.length)
+      html += diagTable("Unexpected — in your output but not expected", user.columns, extra.slice(0, 3), extra.length);
+    return { pass: false, html };
   }
 
   function fmtVal(v) {
@@ -350,6 +439,7 @@
       showVerdict("info", "Nothing to submit", "Write your query first.");
       return;
     }
+    if (mock && mock.perQ[mock.idx].status === "pending") mock.perQ[mock.idx].attempts++;
     let db;
     let userRes;
     try {
@@ -382,11 +472,15 @@
       setStatus(current.id, "solved");
       showVerdict("pass", "✓ Accepted — correct!",
         (cmp.note ? cmp.note + " " : "") +
-        "Nice work. Try the next one, or read the solution to compare approaches.");
+        (mock ? "Moving to the next question…"
+              : "Nice work. Try the next one, or read the solution to compare approaches."));
+      if (mock) mockRecordSolved();
     } else {
       setStatus(current.id, "attempted");
-      showVerdict("fail", "✗ Wrong answer", escapeHtml(cmp.reason) +
-        ' Compare the two tabs below — or take a <a href="#" id="verdictHintLink" style="color:inherit">hint</a>.');
+      showVerdict("fail", "✗ Wrong answer", cmp.html +
+        (mock ? ""
+              : '<span class="diag-footer">Compare the two tabs below — or take a ' +
+                '<a href="#" id="verdictHintLink" style="color:inherit">hint</a>.</span>'));
       const link = document.getElementById("verdictHintLink");
       if (link) link.addEventListener("click", (e) => { e.preventDefault(); revealNextHint(); });
     }
@@ -398,6 +492,170 @@
     });
     byId("resultYours").classList.toggle("hidden", which !== "yours");
     byId("resultExpected").classList.toggle("hidden", which !== "expected");
+  }
+
+  /* ---------------- mock interview ---------------- */
+  const MOCK_MINUTES = 30;
+  const MOCK_POINTS = { Easy: 10, Medium: 20, Hard: 30 };
+  const LS_MOCKS = "sqlforge_mock_history";
+  let mock = null; // {ids, idx, perQ, deadline, timer, qStart, startedAt}
+
+  function pickMockQuestions() {
+    const p = loadProgress();
+    const pick = (diff) => {
+      const unsolved = QUESTIONS.filter((q) => q.difficulty === diff && p[q.id] !== "solved");
+      const pool = unsolved.length ? unsolved : QUESTIONS.filter((q) => q.difficulty === diff);
+      return pool[Math.floor(Math.random() * pool.length)].id;
+    };
+    return [pick("Easy"), pick("Medium"), pick("Hard")];
+  }
+
+  function startMock() {
+    if (mock) return;
+    if (!SQL) { alert("The SQL engine is still loading — try again in a second."); return; }
+    if (!confirm(`Start a ${MOCK_MINUTES}-minute mock interview?\n\n3 questions (easy → medium → hard), no hints, no solutions. You can skip a question or end early.`)) return;
+    mock = {
+      ids: pickMockQuestions(),
+      idx: 0,
+      perQ: [],
+      startedAt: Date.now(),
+      qStart: Date.now(),
+      deadline: Date.now() + MOCK_MINUTES * 60 * 1000,
+    };
+    mock.perQ = mock.ids.map((id) => {
+      const q = QUESTIONS.find((x) => x.id === id);
+      return { id, title: q.title, difficulty: q.difficulty, attempts: 0, status: "pending", seconds: 0 };
+    });
+    document.body.classList.add("mock-active");
+    byId("mockBanner").classList.remove("hidden");
+    mock.timer = setInterval(tickMock, 1000);
+    updateMockBanner();
+    openQuestion(mock.ids[0]);
+  }
+
+  function tickMock() {
+    if (!mock) return;
+    const left = mock.deadline - Date.now();
+    if (left <= 0) { endMock(true); return; }
+    const m = Math.floor(left / 60000), s = Math.floor((left % 60000) / 1000);
+    const el = byId("mockTimer");
+    el.textContent = `${m}:${String(s).padStart(2, "0")}`;
+    el.classList.toggle("low", left < 5 * 60 * 1000);
+  }
+
+  function updateMockBanner() {
+    byId("mockProgress").textContent =
+      `Question ${mock.idx + 1} of ${mock.ids.length} · ` +
+      mock.perQ.map((q) => (q.status === "solved" ? "✓" : q.status === "skipped" ? "→" : "·")).join(" ");
+    tickMock();
+  }
+
+  function mockRecordSolved() {
+    const q = mock.perQ[mock.idx];
+    if (q.status !== "pending") return;
+    q.status = "solved";
+    q.seconds = Math.round((Date.now() - mock.qStart) / 1000);
+    setTimeout(advanceMock, 1400);
+  }
+
+  function mockSkip() {
+    const q = mock.perQ[mock.idx];
+    if (q.status !== "pending") return;
+    q.status = "skipped";
+    q.seconds = Math.round((Date.now() - mock.qStart) / 1000);
+    advanceMock();
+  }
+
+  function advanceMock() {
+    if (!mock) return;
+    if (mock.idx + 1 >= mock.ids.length) { endMock(false); return; }
+    mock.idx++;
+    mock.qStart = Date.now();
+    updateMockBanner();
+    openQuestion(mock.ids[mock.idx]);
+  }
+
+  function endMock(expired) {
+    if (!mock) return;
+    clearInterval(mock.timer);
+    mock.perQ.forEach((q) => {
+      if (q.status === "pending") {
+        q.status = "unsolved";
+        q.seconds = Math.round((Date.now() - mock.qStart) / 1000);
+      }
+    });
+    const score = mock.perQ.reduce((s, q) => s + (q.status === "solved" ? MOCK_POINTS[q.difficulty] : 0), 0);
+    const maxScore = mock.perQ.reduce((s, q) => s + MOCK_POINTS[q.difficulty], 0);
+    const usedSec = Math.min(Math.round((Date.now() - mock.startedAt) / 1000), MOCK_MINUTES * 60);
+    const record = {
+      date: new Date().toISOString(),
+      score, maxScore, expired,
+      usedSec,
+      detail: mock.perQ.map((q) => ({
+        title: q.title, difficulty: q.difficulty, status: q.status,
+        attempts: q.attempts, seconds: q.seconds,
+      })),
+    };
+    try {
+      const hist = JSON.parse(localStorage.getItem(LS_MOCKS)) || [];
+      hist.unshift(record);
+      localStorage.setItem(LS_MOCKS, JSON.stringify(hist.slice(0, 20)));
+    } catch (e) { /* storage full/blocked — scorecard still shows */ }
+
+    document.body.classList.remove("mock-active");
+    byId("mockBanner").classList.add("hidden");
+    mock = null;
+    showScorecard(record);
+    renderMockHistory();
+  }
+
+  function fmtDuration(sec) {
+    return `${Math.floor(sec / 60)}m ${String(sec % 60).padStart(2, "0")}s`;
+  }
+
+  function showScorecard(rec) {
+    const verdictLine =
+      rec.score === rec.maxScore ? "Flawless — you're interview-ready at this level." :
+      rec.score >= rec.maxScore / 2 ? "Solid. Review the ones that got away below." :
+      "Rough one — that's what practice is for. Read the solutions for the misses.";
+    const rows = rec.detail.map((d) => {
+      const icon = d.status === "solved" ? "✅" : d.status === "skipped" ? "⏭" : "❌";
+      return `<tr>
+        <td>${icon} ${escapeHtml(d.title)}</td>
+        <td class="diff-${d.difficulty}">${d.difficulty}</td>
+        <td>${d.status}</td>
+        <td>${d.attempts}</td>
+        <td>${fmtDuration(d.seconds)}</td>
+      </tr>`;
+    }).join("");
+    byId("scorecardBody").innerHTML = `
+      <div class="score-headline">${rec.score} <span class="score-max">/ ${rec.maxScore}</span></div>
+      <p class="score-verdict">${rec.expired ? "⏰ Time expired. " : ""}${verdictLine}</p>
+      <table class="data-table score-table">
+        <thead><tr><th>Question</th><th>Level</th><th>Result</th><th>Submits</th><th>Time</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <p class="score-meta">Total time: ${fmtDuration(rec.usedSec)} of ${MOCK_MINUTES}m · solved questions also count toward your overall progress.</p>`;
+    byId("scorecardModal").classList.remove("hidden");
+  }
+
+  function renderMockHistory() {
+    const host = byId("mockHistory");
+    if (!host) return;
+    let hist = [];
+    try { hist = JSON.parse(localStorage.getItem(LS_MOCKS)) || []; } catch (e) { /* ignore */ }
+    if (!hist.length) { host.innerHTML = ""; return; }
+    host.innerHTML = `<h3>🎤 Your mock interviews</h3>` +
+      `<div class="mock-history-list">` +
+      hist.slice(0, 5).map((r) => {
+        const d = new Date(r.date);
+        const solved = r.detail.filter((x) => x.status === "solved").length;
+        return `<div class="mock-history-item">
+          <span class="mh-date">${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+          <span class="mh-score">${r.score}/${r.maxScore}</span>
+          <span class="mh-detail">${solved}/${r.detail.length} solved · ${fmtDuration(r.usedSec)}</span>
+        </div>`;
+      }).join("") + `</div>`;
   }
 
   /* ---------------- question view ---------------- */
@@ -438,7 +696,7 @@
 
   let hintsShown = 0;
   function revealNextHint() {
-    if (!current) return;
+    if (!current || mock) return;
     if (hintsShown >= current.hints.length) return;
     hintsShown++;
     const list = byId("hintList");
@@ -672,8 +930,17 @@
     });
     byId("runBtn").addEventListener("click", handleRun);
     byId("submitBtn").addEventListener("click", handleSubmit);
+    byId("mockBtn").addEventListener("click", startMock);
+    byId("mockSkipBtn").addEventListener("click", mockSkip);
+    byId("mockEndBtn").addEventListener("click", () => {
+      if (mock && confirm("End the interview now and see your scorecard?")) endMock(false);
+    });
+    byId("scorecardCloseBtn").addEventListener("click", () => {
+      byId("scorecardModal").classList.add("hidden");
+    });
     byId("hintBtn").addEventListener("click", revealNextHint);
     byId("solutionBtn").addEventListener("click", () => {
+      if (mock) return;
       const block = byId("solutionBlock");
       const hidden = block.classList.toggle("hidden");
       byId("solutionBtn").textContent = hidden ? "🔓 Show solution" : "🔒 Hide solution";
@@ -698,6 +965,7 @@
   async function init() {
     renderStats();
     renderWelcome();
+    renderMockHistory();
     initFilters();
     initEditor();
     initButtons();

@@ -41,6 +41,16 @@ python3 -m http.server 8741 --directory docs   # serve locally
 The build fails if any question's schema or reference solution doesn't execute
 cleanly, so the published bank is always runnable.
 
+## Features
+
+- **Diagnostic feedback** — wrong answers get a diagnosis, not just a verdict:
+  right-rows-wrong-order, join fan-out, rounding/precision, fraction-vs-percent,
+  NULL handling, plus tables of the exact missing/unexpected rows.
+- **Mock interview mode** — 3 random questions (easy/medium/hard), 30-minute
+  timer, hints and solutions locked, weighted scorecard, local history.
+- Schema-aware autocomplete with on/off toggle, light/dark themes, cross-dialect
+  error hints (T-SQL/Postgres/MySQL constructs explained in SQLite terms).
+
 ## How validation works
 
 On **Submit**, the app seeds a fresh in-memory SQLite database with the question's
