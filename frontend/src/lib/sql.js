@@ -33,6 +33,35 @@ export async function executeSQL(sql, schema) {
   }
 }
 
+export async function getTableData(schema) {
+  let db = null
+  try {
+    const SQL = await getSqlJs()
+    db = new SQL.Database()
+    db.run(schema)
+
+    const nameStmt = db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY rowid")
+    const tableNames = []
+    while (nameStmt.step()) tableNames.push(nameStmt.getAsObject().name)
+    nameStmt.free()
+
+    const tables = {}
+    for (const name of tableNames) {
+      const stmt = db.prepare(`SELECT * FROM "${name}"`)
+      const columns = stmt.getColumnNames()
+      const rows = []
+      while (stmt.step()) rows.push(stmt.getAsObject())
+      stmt.free()
+      tables[name] = { columns, rows }
+    }
+    db.close()
+    return tables
+  } catch {
+    db?.close()
+    return {}
+  }
+}
+
 export function compareResults(userResult, refResult, orderMatters = false) {
   if (userResult.error || refResult.error) return false
   if (userResult.rows.length !== refResult.rows.length) return false

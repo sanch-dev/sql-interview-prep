@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useProgress } from '../contexts/ProgressContext'
+import { getTableData } from '../lib/sql'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
@@ -10,21 +11,31 @@ function readNotes() {
   try { return JSON.parse(localStorage.getItem(NOTES_KEY) || '{}') } catch { return {} }
 }
 
+function ddlOnly(schema) {
+  return schema
+    .replace(/INSERT\s+INTO[\s\S]*?;/gi, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 export default function ProblemPane({ question, theme }) {
   const { progress } = useProgress()
   const status = progress[question.id]?.status || 'todo'
-  const [hintsShown, setHintsShown]   = useState(0)
+  const [hintsShown, setHintsShown]     = useState(0)
   const [solutionOpen, setSolutionOpen] = useState(false)
-  const [notes, setNotes]             = useState('')
+  const [notes, setNotes]               = useState('')
+  const [sampleTables, setSampleTables] = useState({})
 
   const isDark = theme === 'dark'
 
-  // Load notes when question changes
+  // Reset state + load notes + load sample data when question changes
   useEffect(() => {
     setHintsShown(0)
     setSolutionOpen(false)
     setNotes(readNotes()[question.id] || '')
-  }, [question.id])
+    setSampleTables({})
+    getTableData(question.schema).then(setSampleTables)
+  }, [question.id, question.schema])
 
   // Auto-save notes
   useEffect(() => {
@@ -65,7 +76,36 @@ export default function ProblemPane({ question, theme }) {
 
       <details className="schema-details" open>
         <summary className="details-summary">Database Schema</summary>
-        <pre className="schema-code">{question.schema.trim()}</pre>
+        <pre className="schema-code">{ddlOnly(question.schema)}</pre>
+
+        {Object.keys(sampleTables).length > 0 && (
+          <div className="sample-data">
+            <div className="sample-data-label">Sample data</div>
+            {Object.entries(sampleTables).map(([name, { columns, rows }]) => (
+              <div key={name} className="sample-table-wrap">
+                <div className="sample-table-name">{name}</div>
+                <div className="sample-table-scroll">
+                  <table className="sample-table">
+                    <thead>
+                      <tr>{columns.map((c) => <th key={c}>{c}</th>)}</tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((row, i) => (
+                        <tr key={i}>
+                          {columns.map((c) => (
+                            <td key={c} className={row[c] === null ? 'cell-null' : ''}>
+                              {row[c] === null ? 'NULL' : String(row[c])}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </details>
 
       <div className="hints-section">
