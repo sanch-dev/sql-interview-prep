@@ -67,10 +67,10 @@ export default function Welcome({ questions, onSelect }) {
           <h2>How It Works</h2>
           <ol className="steps">
             <li><strong>Pick a question</strong> from the sidebar</li>
-            <li><strong>Write SQL</strong> against a real in-browser SQLite database (<kbd>Ctrl+Enter</kbd> to run)</li>
+            <li><strong>Write SQL</strong> against a real in-browser SQLite database</li>
             <li><strong>Submit</strong> for instant validation with diagnostic feedback</li>
             <li><strong>Unlock hints</strong> and full solutions with explanations</li>
-            <li><strong>Track progress</strong> — sign in to sync across devices</li>
+            <li><strong>Track progress</strong> — synced across devices</li>
           </ol>
         </section>
 
