@@ -1,7 +1,7 @@
 import { useAuth } from '../contexts/AuthContext'
 import { useProgress } from '../contexts/ProgressContext'
 
-export default function Header({ theme, onToggleTheme, onOpenAuth }) {
+export default function Header({ theme, onToggleTheme }) {
   const { user, signOut } = useAuth()
   const { solvedCount } = useProgress()
   const totalQuestions = (window.QUESTIONS || []).length
@@ -34,24 +34,13 @@ export default function Header({ theme, onToggleTheme, onOpenAuth }) {
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
 
-          {user ? (
-            <div className="user-menu">
-              <span className="user-avatar">{user.email[0].toUpperCase()}</span>
-              <span className="user-email">{user.email}</span>
-              <button className="btn btn-ghost btn-sm" onClick={signOut}>
-                Sign out
-              </button>
-            </div>
-          ) : (
-            <div className="auth-buttons">
-              <button className="btn btn-ghost btn-sm" onClick={() => onOpenAuth('login')}>
-                Sign in
-              </button>
-              <button className="btn btn-primary btn-sm" onClick={() => onOpenAuth('register')}>
-                Sign up
-              </button>
-            </div>
-          )}
+          <div className="user-menu">
+            <span className="user-avatar">{user.email[0].toUpperCase()}</span>
+            <span className="user-email">{user.email}</span>
+            <button className="btn btn-ghost btn-sm" onClick={signOut}>
+              Sign out
+            </button>
+          </div>
         </div>
       </div>
     </header>

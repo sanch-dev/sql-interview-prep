@@ -1,18 +1,17 @@
 import { useState } from 'react'
-import { AuthProvider } from './contexts/AuthContext'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ProgressProvider } from './contexts/ProgressContext'
 import Header from './components/Header'
 import Sidebar from './components/Sidebar'
 import Welcome from './components/Welcome'
 import Workspace from './components/Workspace'
-import AuthModal from './components/AuthModal'
+import AuthPage from './components/AuthPage'
 
 const allQuestions = window.QUESTIONS || []
 
-export default function App() {
-  const [selected, setSelected]   = useState(null)
-  const [authOpen, setAuthOpen]   = useState(false)
-  const [authMode, setAuthMode]   = useState('login')
+function AppContent() {
+  const { user, loading } = useAuth()
+  const [selected, setSelected] = useState(null)
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('sqlforge_theme') || 'light'
     document.documentElement.setAttribute('data-theme', saved)
@@ -26,48 +25,53 @@ export default function App() {
     document.documentElement.setAttribute('data-theme', next)
   }
 
-  function openAuth(mode) {
-    setAuthMode(mode)
-    setAuthOpen(true)
+  if (loading) {
+    return (
+      <div className="loading-screen">
+        <span className="loading-spinner" />
+      </div>
+    )
+  }
+
+  if (!user) {
+    return <AuthPage />
   }
 
   return (
+    <div className="app" data-theme={theme}>
+      <Header theme={theme} onToggleTheme={toggleTheme} />
+
+      <div className="layout">
+        <Sidebar
+          questions={allQuestions}
+          selectedId={selected?.id}
+          onSelect={setSelected}
+        />
+
+        <main className="main">
+          {selected ? (
+            <Workspace
+              key={selected.id}
+              question={selected}
+              allQuestions={allQuestions}
+              onSelect={setSelected}
+              onBack={() => setSelected(null)}
+              theme={theme}
+            />
+          ) : (
+            <Welcome questions={allQuestions} onSelect={setSelected} />
+          )}
+        </main>
+      </div>
+    </div>
+  )
+}
+
+export default function App() {
+  return (
     <AuthProvider>
       <ProgressProvider>
-        <div className="app" data-theme={theme}>
-          <Header theme={theme} onToggleTheme={toggleTheme} onOpenAuth={openAuth} />
-
-          <div className="layout">
-            <Sidebar
-              questions={allQuestions}
-              selectedId={selected?.id}
-              onSelect={setSelected}
-            />
-
-            <main className="main">
-              {selected ? (
-                <Workspace
-                  key={selected.id}
-                  question={selected}
-                  allQuestions={allQuestions}
-                  onSelect={setSelected}
-                  onBack={() => setSelected(null)}
-                  theme={theme}
-                />
-              ) : (
-                <Welcome questions={allQuestions} onSelect={setSelected} />
-              )}
-            </main>
-          </div>
-
-          {authOpen && (
-            <AuthModal
-              mode={authMode}
-              onClose={() => setAuthOpen(false)}
-              onSwitchMode={(m) => setAuthMode(m)}
-            />
-          )}
-        </div>
+        <AppContent />
       </ProgressProvider>
     </AuthProvider>
   )
