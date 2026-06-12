@@ -21,6 +21,18 @@
   let lastExpected = null;   // cached expected result for the tab view
   let hintTables = {};       // {table: [columns]} for the current question's schema
   let autocompleteOn = localStorage.getItem("sqlforge_autocomplete") !== "0";
+  let theme = localStorage.getItem("sqlforge_theme") || "light";
+
+  /* ---------------- theme ---------------- */
+  function cmTheme() { return theme === "dark" ? "material-darker" : "default"; }
+  function applyTheme() {
+    document.documentElement.setAttribute("data-theme", theme);
+    byId("themeBtn").textContent = theme === "dark" ? "☀ Light" : "☾ Dark";
+    if (editor) {
+      editor.setOption("theme", cmTheme());
+      setTimeout(() => editor.refresh(), 0);
+    }
+  }
 
   /* ---------------- dialect detection ----------------
    * The IDE runs SQLite. When a query errors, check it for constructs from
@@ -551,7 +563,7 @@
   function initEditor() {
     editor = CodeMirror(byId("editorHost"), {
       mode: "text/x-sql",
-      theme: "material-darker",
+      theme: cmTheme(),
       lineNumbers: true,
       lineWrapping: true,
       matchBrackets: true,
@@ -645,6 +657,12 @@
   }
 
   function initButtons() {
+    applyTheme();
+    byId("themeBtn").addEventListener("click", () => {
+      theme = theme === "dark" ? "light" : "dark";
+      localStorage.setItem("sqlforge_theme", theme);
+      applyTheme();
+    });
     updateAutocompleteBtn();
     byId("autocompleteBtn").addEventListener("click", () => {
       autocompleteOn = !autocompleteOn;
@@ -693,6 +711,10 @@
       showVerdictGlobal("Could not load the SQL engine (network issue?). Refresh to retry.");
       return;
     }
+
+    // if a question was opened before the engine finished loading, its
+    // schema tables couldn't render — fill them in now
+    if (current) renderSchemaTables(current);
 
     // deep link (#qid)
     const hash = location.hash.replace("#", "");

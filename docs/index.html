@@ -6,6 +6,13 @@
 <title>QueryLab — Hands-on SQL Practice</title>
 <meta name="description" content="QueryLab: hands-on SQL practice in your browser. Solve interview-style questions in a real SQL IDE with instant validation, hints, and full solutions.">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧪</text></svg>">
+<script>
+  /* set theme before first paint to avoid a flash of the wrong theme */
+  document.documentElement.setAttribute(
+    "data-theme",
+    localStorage.getItem("sqlforge_theme") || "light"
+  );
+</script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/material-darker.min.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
@@ -19,7 +26,10 @@
     <span class="brand-name">Query<em>Lab</em></span>
     <span class="brand-tag">Hands-on SQL practice</span>
   </div>
-  <div class="topbar-stats" id="topbarStats"></div>
+  <div class="topbar-right">
+    <div class="topbar-stats" id="topbarStats"></div>
+    <button class="btn btn-ghost btn-small" id="themeBtn" title="Toggle light / dark theme"></button>
+  </div>
 </header>
 
 <div class="layout">
