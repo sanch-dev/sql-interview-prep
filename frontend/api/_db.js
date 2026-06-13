@@ -1,7 +1,25 @@
-const { Pool } = require('pg')
-let pool
-function getPool() {
-  if (!pool) pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false }, max: 2 })
-  return pool
+const sql = require('mssql')
+
+const config = {
+  server: process.env.MSSQL_SERVER,
+  database: process.env.MSSQL_DB,
+  user: process.env.MSSQL_USER,
+  password: process.env.MSSQL_PASSWORD,
+  options: {
+    encrypt: true,
+    trustServerCertificate: false,
+    enableArithAbort: true,
+  },
+  pool: { max: 2, min: 0, idleTimeoutMillis: 10000 },
+  connectionTimeout: 15000,
+  requestTimeout: 15000,
 }
-module.exports = { getPool }
+
+let _pool = null
+
+async function getPool() {
+  if (!_pool) _pool = await sql.connect(config)
+  return _pool
+}
+
+module.exports = { getPool, sql }

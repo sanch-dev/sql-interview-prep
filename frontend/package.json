@@ -9,13 +9,13 @@
     "copy-questions": "node -e \"require('fs').copyFileSync('../docs/js/questions.js','public/questions.js')\""
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.4",
-    "pg": "^8.12.0",
-    "@uiw/react-codemirror": "^4.23.6",
     "@codemirror/lang-sql": "^6.8.0",
+    "@codemirror/state": "^6.5.0",
     "@codemirror/theme-one-dark": "^6.1.2",
     "@codemirror/view": "^6.35.0",
-    "@codemirror/state": "^6.5.0",
+    "@supabase/supabase-js": "^2.45.4",
+    "@uiw/react-codemirror": "^4.23.6",
+    "mssql": "^11.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
