@@ -1,8 +1,5 @@
-import { createRequire } from 'module'
-import pg from 'pg'
-import { getPool } from './_db.js'
-import { adaptTSQL } from './_translate.js'
-const require = createRequire(import.meta.url)
+const { getPool } = require('./_db')
+const { adaptTSQL } = require('./_translate')
 const questions = require('./questions.json')
 
 const questionMap = Object.fromEntries(questions.map(q => [q.id, q]))
@@ -27,7 +24,7 @@ async function execQuery(questionId, sql, dialect) {
   } finally { client.release() }
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   const { questionId, sql, dialect = 'sqlite' } = req.body
   if (!questionId || !sql) return res.status(400).json({ error: 'questionId and sql required' })

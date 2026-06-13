@@ -1,4 +1,4 @@
-export function adaptTSQL(sql) {
+function adaptTSQL(sql) {
   let out = sql
   out = out.replace(/\bWITH\s*\(\s*(?:NO(?:LOCK|EXPAND)|READ(?:UNCOMMITTED|COMMITTED|PAST)|UPDLOCK|ROWLOCK|TABLOCK|TABLOCKX|HOLDLOCK|XLOCK|PAGLOCK|NOWAIT)\s*\)/gi, '')
   let topN = null
@@ -27,3 +27,4 @@ export function adaptTSQL(sql) {
   out = out.replace(/\bDATETIME\b/gi, 'TIMESTAMP')
   return out
 }
+module.exports = { adaptTSQL }

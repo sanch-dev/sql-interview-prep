@@ -1,12 +1,10 @@
-import { createRequire } from 'module'
-import { getPool } from '../../_db.js'
-const require = createRequire(import.meta.url)
+const { getPool } = require('../../_db')
 const questions = require('../../questions.json')
 
 const questionMap = Object.fromEntries(questions.map(q => [q.id, q]))
 const schemaName = id => 'q_' + id.replace(/-/g, '_')
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const { id } = req.query
   if (!questionMap[id]) return res.status(404).json({ error: `Unknown question: ${id}` })
   const schema = schemaName(id)
