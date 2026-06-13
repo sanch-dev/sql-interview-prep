@@ -1,4 +1,5 @@
 const { getPool } = require('./_db')
+const { sqliteToMSSQL } = require('./_sqliteRef')
 const questions = require('./questions.json')
 
 const questionMap = Object.fromEntries(questions.map(q => [q.id, q]))
@@ -49,7 +50,7 @@ module.exports = async function handler(req, res) {
   const pool = await getPool()
   const [userResult, refResult] = await Promise.all([
     execQuery(pool, qualify(sql)),
-    execQuery(pool, qualify(q.solution)),
+    execQuery(pool, qualify(sqliteToMSSQL(q.solution))),
   ])
   const correct = !userResult.error && !refResult.error && compare(userResult, refResult, q.order_matters)
   res.json({ userResult, refResult, correct })
