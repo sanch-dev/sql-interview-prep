@@ -11,14 +11,14 @@ import AnalyzerPage from './pages/AnalyzerPage'
 import DebugPage from './pages/DebugPage'
 import SchemaDesignPage from './pages/SchemaDesignPage'
 
-// Practice questions exclude debug-type entries
-const allQuestions = (window.QUESTIONS || []).filter(q => q.type !== 'debug')
+const allQuestions   = (window.QUESTIONS || []).filter(q => q.type !== 'debug')
 const debugQuestions = (window.QUESTIONS || []).filter(q => q.type === 'debug')
 
 function AppContent() {
   const { user, loading } = useAuth()
-  const [selected, setSelected]     = useState(null)
-  const [currentPage, setCurrentPage] = useState('practice')
+  const [selected,     setSelected]     = useState(null)
+  const [currentPage,  setCurrentPage]  = useState('practice')
+  const [sidebarOpen,  setSidebarOpen]  = useState(false)
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('sqlforge_theme') || 'light'
     document.documentElement.setAttribute('data-theme', saved)
@@ -40,9 +40,7 @@ function AppContent() {
     )
   }
 
-  if (!user) {
-    return <AuthPage />
-  }
+  if (!user) return <AuthPage />
 
   return (
     <div className="app" data-theme={theme}>
@@ -51,6 +49,7 @@ function AppContent() {
         onToggleTheme={toggleTheme}
         currentPage={currentPage}
         onChangePage={(page) => { setCurrentPage(page); setSelected(null) }}
+        onOpenSidebar={() => setSidebarOpen(true)}
       />
 
       {currentPage === 'practice' && (
@@ -59,6 +58,8 @@ function AppContent() {
             questions={allQuestions}
             selectedId={selected?.id}
             onSelect={setSelected}
+            mobileOpen={sidebarOpen}
+            onMobileClose={() => setSidebarOpen(false)}
           />
           <main className="main">
             {selected ? (
@@ -77,10 +78,10 @@ function AppContent() {
         </div>
       )}
 
-      {currentPage === 'concepts'  && <ConceptsPage theme={theme} />}
-      {currentPage === 'analyzer'  && <AnalyzerPage theme={theme} />}
-      {currentPage === 'debug'     && <DebugPage questions={debugQuestions} theme={theme} />}
-      {currentPage === 'schema'    && <SchemaDesignPage theme={theme} />}
+      {currentPage === 'concepts' && <ConceptsPage theme={theme} />}
+      {currentPage === 'analyzer' && <AnalyzerPage theme={theme} />}
+      {currentPage === 'debug'    && <DebugPage questions={debugQuestions} theme={theme} />}
+      {currentPage === 'schema'   && <SchemaDesignPage theme={theme} />}
     </div>
   )
 }

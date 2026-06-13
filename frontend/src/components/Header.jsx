@@ -11,14 +11,20 @@ const NAV_TABS = [
   { id: 'schema',   label: 'Schema',    icon: '🗄' },
 ]
 
-export default function Header({ theme, onToggleTheme, currentPage, onChangePage }) {
-  const { user, signOut } = useAuth()
+export default function Header({ theme, onToggleTheme, currentPage, onChangePage, onOpenSidebar }) {
+  const { user, signOut }  = useAuth()
   const { solvedCount, streak, todaySolved } = useProgress()
   const totalQuestions = (window.QUESTIONS || []).filter(q => q.type !== 'debug').length
 
   return (
     <header className="header">
       <div className="header-inner">
+
+        {/* Hamburger — mobile only */}
+        <button className="hamburger-btn" onClick={onOpenSidebar} aria-label="Open menu">
+          ☰
+        </button>
+
         <div className="header-left">
           <span className="logo">
             <span className="logo-icon">🧪</span>
@@ -41,12 +47,10 @@ export default function Header({ theme, onToggleTheme, currentPage, onChangePage
 
         <div className="header-right">
           {streak > 0 && (
-            <span className="streak-badge" title={`${streak}-day streak`}>
-              🔥 {streak}
-            </span>
+            <span className="streak-badge" title={`${streak}-day streak`}>🔥 {streak}</span>
           )}
 
-          <span className="header-progress" title={`${todaySolved}/${DAILY_GOAL} daily goal · ${solvedCount} total`}>
+          <span className="header-progress" title={`${todaySolved}/${DAILY_GOAL} daily goal`}>
             <span className="progress-solved">{todaySolved}</span>
             <span className="progress-sep">/</span>
             <span className="progress-total">{DAILY_GOAL}</span>
@@ -74,6 +78,7 @@ export default function Header({ theme, onToggleTheme, currentPage, onChangePage
             <button className="btn btn-ghost btn-sm" onClick={signOut}>Sign out</button>
           </div>
         </div>
+
       </div>
     </header>
   )
