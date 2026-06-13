@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useProgress } from '../contexts/ProgressContext'
 import { compareResults, executeSQL, getTableData } from '../lib/sql'
 import EditorPane from './EditorPane'
@@ -19,10 +19,12 @@ function writeDraft(questionId, code) {
 
 export default function Workspace({ question, allQuestions, onSelect, onBack, theme }) {
   const { progress, updateProgress, reviewMarks, toggleReviewMark } = useProgress()
-  const [results, setResults]         = useState(null)
-  const [refResult, setRefResult]     = useState(null)
-  const [isRunning, setIsRunning]     = useState(false)
+  const [results, setResults]           = useState(null)
+  const [refResult, setRefResult]       = useState(null)
+  const [isRunning, setIsRunning]       = useState(false)
   const [sampleTables, setSampleTables] = useState({})
+  const [splitPct, setSplitPct]         = useState(42)
+  const splitContainerRef               = useRef(null)
 
   const savedCode = readDraft(question.id) || progress[question.id]?.solution || ''
 
@@ -30,7 +32,6 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
   const prevQ = currentIndex > 0 ? allQuestions[currentIndex - 1] : null
   const nextQ = currentIndex < allQuestions.length - 1 ? allQuestions[currentIndex + 1] : null
 
-  // Load sample data once per question
   useEffect(() => {
     setSampleTables({})
     getTableData(question.schema).then(setSampleTables)
@@ -60,7 +61,7 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
 
     const correct = compareResults(userResult, ref, question.order_matters)
     setResults({ ...userResult, type: 'submit', correct })
-    setRefResult(ref) // always show expected output on submit
+    setRefResult(ref)
 
     const status = correct ? 'solved' : 'attempted'
     updateProgress(question.id, { status, solution: sql })
@@ -70,6 +71,22 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
   const handleSave = useCallback((code) => {
     writeDraft(question.id, code)
   }, [question.id])
+
+  function startSplitDrag(e) {
+    e.preventDefault()
+    function onMove(ev) {
+      if (!splitContainerRef.current) return
+      const rect = splitContainerRef.current.getBoundingClientRect()
+      const pct  = ((ev.clientX - rect.left) / rect.width) * 100
+      setSplitPct(Math.max(25, Math.min(72, pct)))
+    }
+    function onUp() {
+      window.removeEventListener('mousemove', onMove)
+      window.removeEventListener('mouseup', onUp)
+    }
+    window.addEventListener('mousemove', onMove)
+    window.addEventListener('mouseup', onUp)
+  }
 
   return (
     <div className="workspace">
@@ -89,9 +106,11 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
         </div>
       </div>
 
-      <div className="workspace-split">
-        <ProblemPane question={question} theme={theme} sampleTables={sampleTables} />
-        <div className="split-divider" />
+      <div className="workspace-split" ref={splitContainerRef}>
+        <div className="problem-pane-sizer" style={{ width: `${splitPct}%` }}>
+          <ProblemPane question={question} theme={theme} sampleTables={sampleTables} />
+        </div>
+        <div className="split-drag-handle" onMouseDown={startSplitDrag} title="Drag to resize" />
         <EditorPane
           question={question}
           initialValue={savedCode}
