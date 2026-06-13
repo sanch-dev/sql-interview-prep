@@ -262,9 +262,6 @@ export default function EditorPane({ question, initialValue, results, refResult,
         </div>
       </div>
 
-      <div className="tsql-notice">
-        T-SQL mode — <code>TOP N</code>, <code>ISNULL</code>, <code>LEN</code>, <code>GETDATE</code>, <code>CHARINDEX</code>, <code>DATEADD</code>, <code>DATEDIFF</code> run natively on Azure SQL.
-      </div>
 
       {timerExpired && (
         <div className="timer-expired-banner">
