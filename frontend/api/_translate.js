@@ -8,7 +8,7 @@ function adaptTSQL(sql) {
   out = out.replace(/\bLEN\s*\(/gi, 'LENGTH(')
   out = out.replace(/\bGET(?:UTC)?DATE\s*\(\s*\)/gi, 'CURRENT_TIMESTAMP')
   out = out.replace(/\bCHARINDEX\s*\(\s*([^,]+),\s*([^)]+)\)/gi, (_, needle, haystack) => `STRPOS(${haystack.trim()}, ${needle.trim()})`)
-  out = out.replace(/\bDATEADD\s*\(\s*(year|month|day|hour|minute|second)\s*,\s*(-?\d+)\s*,\s*([^)]+)\)/gi, (_, part, n, date) => `(${date.trim()} + INTERVAL '${n} ${part}s')`)
+  out = out.replace(/\bDATEADD\s*\(\s*(year|month|day|hour|minute|second)\s*,\s*(-?\d+)\s*,\s*([^)]+)\)/gi, (_, part, n, date) => `(${date.trim()}::date + INTERVAL '${n} ${part}s')`)
   out = out.replace(/\bDATEDIFF\s*\(\s*(year|month|day|hour|minute|second)\s*,\s*([^,]+),\s*([^)]+)\)/gi, (_, part, d1, d2) => {
     const s = d1.trim(), e = d2.trim()
     if (part.toLowerCase() === 'day')    return `EXTRACT(day FROM (${e}::timestamp - ${s}::timestamp))::int`
