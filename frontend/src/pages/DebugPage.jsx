@@ -210,7 +210,7 @@ export default function DebugPage({ questions: rawQuestions, theme }) {
             <h2 className="debug-problem-title">{selected?.title}</h2>
             <div
               className="problem-description"
-              dangerouslySetInnerHTML={{ __html: selected?.description }}
+              dangerouslySetInnerHTML={{ __html: (selected?.description || '').replace(/<div class="bug-banner">[\s\S]*?<\/div>/g, '') }}
             />
           </div>
 
