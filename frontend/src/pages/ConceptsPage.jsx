@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
-import { sql } from '@codemirror/lang-sql'
+import { sql, MSSQL, SQLite } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
 
 const CONCEPTS = [
@@ -11,6 +11,10 @@ const CONCEPTS = [
     example: `SELECT e.name, d.dept_name
 FROM employees e
 INNER JOIN departments d ON e.dept_id = d.dept_id;`,
+    exampleTSQL: `SELECT e.name, d.dept_name
+FROM employees e
+INNER JOIN departments d ON e.dept_id = d.dept_id;
+-- T-SQL syntax is identical to standard SQL`,
     tip: 'If you see fewer rows than expected, a LEFT JOIN may be what you actually need — INNER JOIN silently drops unmatched rows.',
   },
   {
@@ -21,59 +25,94 @@ SELECT c.name, COUNT(o.order_id) AS order_count
 FROM customers c
 LEFT JOIN orders o ON c.customer_id = o.customer_id
 GROUP BY c.customer_id, c.name;`,
-    tip: 'LEFT JOIN + WHERE right_table.col IS NULL is a classic pattern to find records that have NO match — e.g., customers who never ordered.',
+    exampleTSQL: `-- T-SQL: LEFT JOIN syntax identical; NOLOCK hint is T-SQL specific
+SELECT c.name, COUNT(o.order_id) AS order_count
+FROM customers c
+LEFT JOIN orders o WITH (NOLOCK) ON c.customer_id = o.customer_id
+GROUP BY c.customer_id, c.name;`,
+    tip: 'LEFT JOIN + WHERE right_table.col IS NULL finds rows with no match — classic "customers who never ordered" pattern.',
   },
   {
     id: 'self-join', category: 'Joins', title: 'Self Join',
     summary: 'Join a table to itself using aliases. Common for org hierarchies or finding pairs within the same table.',
-    example: `-- Find each employee and their manager's name
+    example: `-- Each employee and their manager's name
 SELECT e.name AS employee, m.name AS manager
 FROM employees e
 LEFT JOIN employees m ON e.manager_id = m.emp_id;`,
-    tip: 'Always alias both sides of a self-join (e for employee, m for manager). Without aliases, column names become ambiguous.',
+    exampleTSQL: `-- T-SQL: identical self-join syntax
+SELECT e.name AS employee, m.name AS manager
+FROM employees e
+LEFT JOIN employees m ON e.manager_id = m.emp_id;`,
+    tip: 'Always alias both sides of a self-join. Without aliases column names become ambiguous.',
   },
   {
-    id: 'join-duplicates', category: 'Joins', title: 'Avoiding Duplicate Rows in Joins',
-    summary: 'A many-to-many join (e.g., customers → orders → products) fans out rows. Use DISTINCT or aggregate to collapse them.',
-    example: `-- Wrong: fans out, customer appears once per product bought
+    id: 'join-duplicates', category: 'Joins', title: 'Avoiding Duplicate Rows from Joins',
+    summary: 'A many-to-many join fans out rows. Use DISTINCT or aggregate to collapse duplicates.',
+    example: `-- DISTINCT collapses duplicates from many-to-many join
 SELECT DISTINCT c.name
 FROM customers c
 JOIN orders o      ON c.customer_id = o.customer_id
 JOIN order_items i ON o.order_id    = i.order_id
-WHERE i.category = 'electronics';`,
-    tip: 'Whenever you JOIN through a junction/bridge table, always check for unexpected row inflation with a quick COUNT(*) before adding DISTINCT.',
+JOIN products p    ON i.product_id  = p.product_id
+WHERE p.category = 'electronics';`,
+    exampleTSQL: `-- T-SQL: DISTINCT works the same way
+SELECT DISTINCT c.name
+FROM customers c
+JOIN orders o      ON c.customer_id = o.customer_id
+JOIN order_items i ON o.order_id    = i.order_id
+JOIN products p    ON i.product_id  = p.product_id
+WHERE p.category = 'electronics';`,
+    tip: 'When you JOIN through a junction/bridge table, always check for row inflation with COUNT(*) before adding DISTINCT.',
   },
 
   // ───── AGGREGATION ─────
   {
     id: 'group-by', category: 'Aggregation', title: 'GROUP BY & HAVING',
-    summary: 'GROUP BY collapses rows into groups by column values. HAVING filters those groups (like WHERE but for aggregated data).',
+    summary: 'GROUP BY collapses rows into groups. HAVING filters those groups (like WHERE but for aggregated data).',
     example: `SELECT department, AVG(salary) AS avg_sal, COUNT(*) AS headcount
 FROM employees
 GROUP BY department
 HAVING AVG(salary) > 70000
 ORDER BY avg_sal DESC;`,
-    tip: 'WHERE filters rows BEFORE grouping; HAVING filters AFTER. You cannot use aggregate functions in WHERE.',
+    exampleTSQL: `SELECT department, AVG(salary) AS avg_sal, COUNT(*) AS headcount
+FROM employees
+GROUP BY department
+HAVING AVG(salary) > 70000
+ORDER BY avg_sal DESC;
+-- T-SQL: identical syntax for GROUP BY / HAVING`,
+    tip: 'WHERE filters BEFORE grouping; HAVING filters AFTER. You cannot use aggregate functions in WHERE.',
   },
   {
     id: 'count-nulls', category: 'Aggregation', title: 'COUNT(*) vs COUNT(col)',
-    summary: 'COUNT(*) counts all rows including NULLs. COUNT(col) counts only non-NULL values in that column.',
+    summary: 'COUNT(*) counts all rows including NULLs. COUNT(col) counts only non-NULL values.',
     example: `SELECT
   COUNT(*)            AS total_rows,
   COUNT(manager_id)   AS rows_with_manager,  -- NULLs excluded
   COUNT(DISTINCT dept) AS unique_depts
 FROM employees;`,
+    exampleTSQL: `SELECT
+  COUNT(*)             AS total_rows,
+  COUNT(manager_id)    AS rows_with_manager,  -- NULLs excluded
+  COUNT(DISTINCT dept) AS unique_depts
+FROM employees;
+-- T-SQL: COUNT behavior is identical to standard SQL`,
     tip: 'This distinction is a classic interview trap. Always clarify whether NULLs should be counted.',
   },
   {
     id: 'running-total', category: 'Aggregation', title: 'Running Total (Cumulative SUM)',
     summary: 'Use SUM() as a window function with ORDER BY inside OVER() to compute a running total.',
-    example: `SELECT
-  sale_date,
-  amount,
+    example: `-- SQLite: running total with window function
+SELECT sale_date, amount,
   SUM(amount) OVER (ORDER BY sale_date) AS running_total
 FROM daily_sales;`,
-    tip: 'Without ORDER BY inside OVER(), SUM() gives the grand total for every row — add ORDER BY to make it cumulative.',
+    exampleTSQL: `-- T-SQL: identical window function syntax
+SELECT sale_date, amount,
+  SUM(amount) OVER (ORDER BY sale_date) AS running_total
+FROM daily_sales;
+
+-- T-SQL also supports explicit ROWS clause:
+SUM(amount) OVER (ORDER BY sale_date ROWS UNBOUNDED PRECEDING)`,
+    tip: 'Without ORDER BY inside OVER(), SUM() gives the grand total for every row.',
   },
 
   // ───── WINDOW FUNCTIONS ─────
@@ -81,240 +120,328 @@ FROM daily_sales;`,
     id: 'rank-vs-rownumber', category: 'Window Functions', title: 'RANK vs DENSE_RANK vs ROW_NUMBER',
     summary: 'All three number rows. They differ in how they handle ties.',
     example: `SELECT name, score,
-  ROW_NUMBER()  OVER (ORDER BY score DESC) AS row_num,   -- 1,2,3,4 (no ties)
-  RANK()        OVER (ORDER BY score DESC) AS rnk,       -- 1,1,3,4 (skips 2)
-  DENSE_RANK()  OVER (ORDER BY score DESC) AS dense_rnk  -- 1,1,2,3 (no skip)
+  ROW_NUMBER()  OVER (ORDER BY score DESC) AS row_num,   -- 1,2,3 (no ties)
+  RANK()        OVER (ORDER BY score DESC) AS rnk,       -- 1,1,3 (skips 2)
+  DENSE_RANK()  OVER (ORDER BY score DESC) AS dense_rnk  -- 1,1,2 (no skip)
 FROM leaderboard;`,
-    tip: '"Top N per group" questions almost always need RANK() or DENSE_RANK() + a WHERE in a subquery or CTE. ROW_NUMBER() works when ties should be broken arbitrarily.',
+    exampleTSQL: `-- T-SQL: identical window ranking syntax
+SELECT name, score,
+  ROW_NUMBER()  OVER (ORDER BY score DESC) AS row_num,
+  RANK()        OVER (ORDER BY score DESC) AS rnk,
+  DENSE_RANK()  OVER (ORDER BY score DESC) AS dense_rnk
+FROM leaderboard;
+-- All three functions are standard SQL, supported identically in T-SQL`,
+    tip: '"Top N per group" questions almost always need RANK/DENSE_RANK + WHERE rank ≤ N in a CTE.',
   },
   {
     id: 'lag-lead', category: 'Window Functions', title: 'LAG & LEAD',
-    summary: 'LAG accesses the previous row\'s value; LEAD accesses the next row\'s value. Both without a subquery or self-join.',
-    example: `-- Month-over-month revenue change
+    summary: 'LAG accesses the previous row; LEAD accesses the next row — both without a self-join.',
+    example: `-- SQLite: month-over-month change
 SELECT month, revenue,
   LAG(revenue, 1, 0) OVER (ORDER BY month) AS prev_month,
   revenue - LAG(revenue, 1, 0) OVER (ORDER BY month) AS change
 FROM monthly_revenue;`,
-    tip: 'The third argument to LAG/LEAD is the default value when there is no previous/next row. Use 0 or NULL depending on context.',
+    exampleTSQL: `-- T-SQL: identical LAG/LEAD syntax
+SELECT month, revenue,
+  LAG(revenue, 1, 0)  OVER (ORDER BY month) AS prev_month,
+  revenue - LAG(revenue, 1, 0) OVER (ORDER BY month) AS mom_change,
+  LEAD(revenue, 1, 0) OVER (ORDER BY month) AS next_month
+FROM monthly_revenue;`,
+    tip: 'The third argument to LAG/LEAD is the default when there is no previous/next row.',
   },
   {
     id: 'partition-by', category: 'Window Functions', title: 'PARTITION BY',
-    summary: 'PARTITION BY resets the window function for each group — like GROUP BY but without collapsing rows.',
-    example: `-- Rank employees within each department
+    summary: 'PARTITION BY resets the window function per group — like GROUP BY without collapsing rows.',
+    example: `-- Rank employees within each department (SQLite)
 SELECT name, department, salary,
   RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS dept_rank
 FROM employees;`,
-    tip: 'Think of PARTITION BY as "restart the numbering/calculation for each value of this column." You can PARTITION BY multiple columns.',
-  },
-  {
-    id: 'ntile', category: 'Window Functions', title: 'NTILE (Percentile Buckets)',
-    summary: 'NTILE(n) divides rows into n equal buckets. NTILE(4) gives quartiles (1–4).',
-    example: `-- Divide customers into spend quartiles
-SELECT customer_id, total_spend,
-  NTILE(4) OVER (ORDER BY total_spend) AS quartile
-FROM customer_summary;`,
-    tip: 'NTILE is great for cohort analysis. Bucket 1 = bottom tier, bucket N = top tier.',
+    exampleTSQL: `-- T-SQL: PARTITION BY identical syntax
+SELECT name, department, salary,
+  RANK() OVER (PARTITION BY department ORDER BY salary DESC) AS dept_rank,
+  AVG(salary) OVER (PARTITION BY department) AS dept_avg_salary
+FROM employees;`,
+    tip: 'Think of PARTITION BY as "restart the calculation for each value of this column."',
   },
 
   // ───── CTEs ─────
   {
     id: 'cte-basics', category: 'CTEs', title: 'Common Table Expressions (WITH)',
-    summary: 'A CTE is a named temporary result set defined before the main query. It makes complex queries readable and reusable within the statement.',
-    example: `WITH dept_avg AS (
+    summary: 'A CTE is a named temporary result set defined before the main query. Makes complex queries readable.',
+    example: `-- SQLite / Standard SQL CTE
+WITH dept_avg AS (
   SELECT department, AVG(salary) AS avg_sal
   FROM employees
   GROUP BY department
 )
-SELECT e.name, e.salary, d.avg_sal,
-  e.salary - d.avg_sal AS diff_from_avg
+SELECT e.name, e.salary, d.avg_sal
 FROM employees e
 JOIN dept_avg d ON e.department = d.department;`,
-    tip: 'Replace nested subqueries with CTEs when a query becomes hard to read. You can chain multiple CTEs with commas inside a single WITH block.',
-  },
-  {
-    id: 'cte-vs-subquery', category: 'CTEs', title: 'CTE vs Subquery',
-    summary: 'CTEs and subqueries are often interchangeable, but CTEs are more readable and can be referenced multiple times.',
-    example: `-- Subquery version (hard to read when nested deeply)
-SELECT name FROM employees
-WHERE dept_id IN (
-  SELECT dept_id FROM departments WHERE location = 'NYC'
-);
-
--- CTE version (clearer)
-WITH nyc_depts AS (
-  SELECT dept_id FROM departments WHERE location = 'NYC'
+    exampleTSQL: `-- T-SQL: same WITH syntax, also supports multiple CTEs
+WITH dept_avg AS (
+  SELECT department, AVG(salary) AS avg_sal
+  FROM employees
+  GROUP BY department
+),
+top_earners AS (
+  SELECT name, department, salary
+  FROM employees
+  WHERE salary > 100000
 )
-SELECT name FROM employees WHERE dept_id IN (SELECT dept_id FROM nyc_depts);`,
-    tip: 'If the same subquery appears more than once, convert it to a CTE — it\'s both cleaner and signals intent to the reader.',
+SELECT t.name, t.salary, d.avg_sal
+FROM top_earners t
+JOIN dept_avg d ON t.department = d.department;`,
+    tip: 'Chain multiple CTEs with commas in one WITH block. The last one feeds into the main SELECT.',
   },
 
   // ───── SUBQUERIES ─────
   {
     id: 'correlated-subquery', category: 'Subqueries', title: 'Correlated Subquery',
-    summary: 'A correlated subquery references columns from the outer query. It runs once per outer row — powerful but potentially slow on large tables.',
-    example: `-- Employees earning above their department average
+    summary: 'A subquery that references the outer query\'s columns. Runs once per outer row — powerful but can be slow.',
+    example: `-- Employees earning above their department average (SQLite)
 SELECT name, salary, department
 FROM employees e1
 WHERE salary > (
   SELECT AVG(salary) FROM employees e2
-  WHERE e2.department = e1.department  -- references outer row
+  WHERE e2.department = e1.department
 );`,
-    tip: 'Correlated subqueries can often be replaced with a JOIN to a CTE containing the aggregated value, which is usually faster on large datasets.',
+    exampleTSQL: `-- T-SQL: same correlated subquery syntax
+SELECT name, salary, department
+FROM employees e1
+WHERE salary > (
+  SELECT AVG(salary) FROM employees e2
+  WHERE e2.department = e1.department
+);
+-- T-SQL alternative: CROSS APPLY with aggregation (often faster)
+SELECT e.name, e.salary, e.department, a.avg_sal
+FROM employees e
+CROSS APPLY (
+  SELECT AVG(salary) AS avg_sal FROM employees i WHERE i.department = e.department
+) a
+WHERE e.salary > a.avg_sal;`,
+    tip: 'Correlated subqueries are often replaceable with a JOIN to a CTE, which can be faster on large tables.',
   },
   {
     id: 'exists-vs-in', category: 'Subqueries', title: 'EXISTS vs IN',
-    summary: 'EXISTS returns true as soon as one matching row is found (short-circuits). IN materialises the subquery result set.',
-    example: `-- EXISTS: stops as soon as it finds one order
+    summary: 'EXISTS short-circuits as soon as one row is found. IN materializes the full subquery result.',
+    example: `-- EXISTS: stops on first match
 SELECT name FROM customers c
 WHERE EXISTS (
   SELECT 1 FROM orders o WHERE o.customer_id = c.customer_id
 );
 
--- IN: collects all customer_ids first, then checks membership
+-- IN: collects all customer_ids first
 SELECT name FROM customers
 WHERE customer_id IN (SELECT customer_id FROM orders);`,
-    tip: 'Prefer NOT EXISTS over NOT IN when the subquery might return NULLs — NOT IN with NULLs always returns an empty result set (classic trap).',
+    exampleTSQL: `-- T-SQL: EXISTS and IN work identically
+SELECT name FROM customers c
+WHERE EXISTS (
+  SELECT 1 FROM orders o WHERE o.customer_id = c.customer_id
+);
+
+-- T-SQL also has NOT EXISTS (safer than NOT IN with NULLs)
+SELECT name FROM customers c
+WHERE NOT EXISTS (
+  SELECT 1 FROM orders o WHERE o.customer_id = c.customer_id
+);`,
+    tip: 'Prefer NOT EXISTS over NOT IN when the subquery might return NULLs — NOT IN with NULLs always returns empty.',
   },
 
   // ───── NULL HANDLING ─────
   {
     id: 'null-comparisons', category: 'NULL Handling', title: 'NULL Comparisons',
-    summary: 'NULL is not a value — it means "unknown." Any comparison with NULL using = or != returns NULL (not true or false).',
-    example: `-- Wrong: returns 0 rows because NULL = NULL is NULL, not true
-SELECT * FROM employees WHERE manager_id = NULL;
-
--- Correct
+    summary: 'NULL means "unknown." Any comparison with = or != returns NULL (not true/false).',
+    example: `-- SQLite: always use IS NULL / IS NOT NULL
 SELECT * FROM employees WHERE manager_id IS NULL;
 SELECT * FROM employees WHERE manager_id IS NOT NULL;`,
-    tip: 'Always use IS NULL / IS NOT NULL. The = NULL bug is one of the most common mistakes in SQL interviews.',
+    exampleTSQL: `-- T-SQL: same IS NULL / IS NOT NULL
+SELECT * FROM employees WHERE manager_id IS NULL;
+SELECT * FROM employees WHERE manager_id IS NOT NULL;
+
+-- T-SQL also has SET ANSI_NULLS OFF (legacy — do NOT use)
+-- In ANSI mode (default), = NULL always evaluates to UNKNOWN`,
+    tip: 'Always use IS NULL / IS NOT NULL. The = NULL bug is one of the most common SQL interview mistakes.',
   },
   {
-    id: 'coalesce', category: 'NULL Handling', title: 'COALESCE & NULLIF',
-    summary: 'COALESCE returns the first non-NULL argument. NULLIF returns NULL when two arguments are equal (useful to avoid division by zero).',
-    example: `-- Replace NULL with a default
-SELECT name, COALESCE(phone, 'N/A') AS phone
-FROM contacts;
+    id: 'coalesce', category: 'NULL Handling', title: 'COALESCE / ISNULL / NULLIF',
+    summary: 'COALESCE returns the first non-NULL argument (standard SQL). ISNULL is the T-SQL 2-argument shorthand.',
+    example: `-- SQLite: COALESCE for NULL fallback
+SELECT name, COALESCE(phone, 'N/A') AS phone FROM contacts;
 
--- Avoid division by zero
-SELECT total_sales / NULLIF(num_transactions, 0) AS avg_sale
-FROM summary;`,
-    tip: 'COALESCE with multiple arguments chains fallbacks: COALESCE(a, b, c) returns the first non-NULL of a, b, or c.',
-  },
-  {
-    id: 'null-in-aggregates', category: 'NULL Handling', title: 'NULLs in Aggregates & Joins',
-    summary: 'Aggregate functions like SUM, AVG, COUNT(col) silently ignore NULLs. NULLs in JOIN keys cause rows to be dropped.',
-    example: `-- NULLs are excluded from AVG — this might surprise you
-SELECT AVG(bonus) FROM employees; -- employees with NULL bonus are excluded
+-- NULLIF returns NULL when two args are equal (avoid division by zero)
+SELECT total / NULLIF(count, 0) AS avg_value FROM summary;`,
+    exampleTSQL: `-- T-SQL: ISNULL (only 2 args) or COALESCE (multi-arg)
+SELECT name, ISNULL(phone, 'N/A') AS phone FROM contacts;
 
--- NULLs in join keys never match
-SELECT * FROM a JOIN b ON a.id = b.id;  -- rows where id IS NULL won't match`,
-    tip: 'If a join is dropping more rows than expected, check whether the join key column contains NULLs.',
+-- COALESCE works in T-SQL too (preferred for portability):
+SELECT name, COALESCE(mobile, work_phone, 'N/A') AS contact FROM contacts;
+
+-- NULLIF: same as SQLite/standard SQL
+SELECT total / NULLIF(count, 0) AS avg_value FROM summary;`,
+    tip: 'Use COALESCE for portability. ISNULL is T-SQL-specific and only accepts 2 arguments.',
   },
 
   // ───── DATE FUNCTIONS ─────
   {
-    id: 'date-arithmetic', category: 'Date Functions', title: 'Date Arithmetic (SQLite)',
-    summary: 'SQLite stores dates as TEXT (YYYY-MM-DD). Use DATE(), DATETIME(), and STRFTIME() for manipulation.',
-    example: `-- Days between two dates
-SELECT julianday('2025-12-31') - julianday('2025-01-01') AS days_diff;
+    id: 'date-arithmetic', category: 'Date Functions', title: 'Date Arithmetic',
+    summary: 'SQLite uses string-based dates with STRFTIME/JULIANDAY. T-SQL has GETDATE, DATEADD, DATEDIFF, DATEPART.',
+    example: `-- SQLite
+SELECT DATE('now')                           AS today,
+       DATE('now', '+30 days')               AS future,
+       JULIANDAY('2025-12-31')
+         - JULIANDAY('2025-01-01')           AS days_diff,
+       STRFTIME('%m', order_date)            AS month
+FROM orders;`,
+    exampleTSQL: `-- T-SQL / SSMS
+SELECT GETDATE()                             AS today,
+       DATEADD(DAY, 30, GETDATE())           AS future,
+       DATEDIFF(DAY, '2025-01-01', '2025-12-31') AS days_diff,
+       DATEPART(MONTH, order_date)           AS month_num,
+       FORMAT(order_date, 'yyyy-MM')         AS year_month,
+       EOMONTH(GETDATE())                    AS last_day_of_month
+FROM orders;`,
+    tip: 'In T-SQL: DATEADD(interval, n, date) adds n units. DATEDIFF(interval, start, end) gives the difference.',
+  },
+  {
+    id: 'date-filter', category: 'Date Functions', title: 'Filtering by Date Range',
+    summary: 'Range filters on dates must keep the column bare to allow index usage.',
+    example: `-- SQLite: keep column bare for index
+SELECT * FROM orders
+WHERE order_date >= '2024-01-01'
+  AND order_date <  '2024-02-01';`,
+    exampleTSQL: `-- T-SQL / SSMS: same principle — keep column bare
+SELECT * FROM orders
+WHERE order_date >= '2024-01-01'
+  AND order_date <  '2024-02-01';
 
--- Add 30 days
-SELECT date('now', '+30 days') AS future_date;
-
--- Extract month
-SELECT strftime('%m', order_date) AS month FROM orders;`,
-    tip: 'Date strings must be in ISO format (YYYY-MM-DD) for SQLite comparisons to work correctly as text.',
+-- Avoid wrapping the column in a function (prevents index use):
+-- Bad:  WHERE YEAR(order_date) = 2024 AND MONTH(order_date) = 1
+-- Good: WHERE order_date >= '2024-01-01' AND order_date < '2024-02-01'`,
+    tip: 'Apply transformations to the literal, not the column — keeps the column index-friendly.',
   },
 
   // ───── STRING FUNCTIONS ─────
   {
-    id: 'string-functions', category: 'String Functions', title: 'Key String Functions',
-    summary: 'SQLite provides LENGTH, UPPER, LOWER, TRIM, SUBSTR, REPLACE, INSTR, and LIKE for string manipulation.',
-    example: `SELECT
+    id: 'string-functions', category: 'String Functions', title: 'String Functions: SQLite vs T-SQL',
+    summary: 'Many string functions differ between SQLite and T-SQL/SQL Server.',
+    example: `-- SQLite
+SELECT
   LENGTH(name)             AS name_len,
-  UPPER(name)              AS name_upper,
-  SUBSTR(email, 1, INSTR(email, '@') - 1) AS email_local,
-  REPLACE(phone, '-', '')  AS phone_clean
+  SUBSTR(email, 1, INSTR(email,'@') - 1) AS email_local,
+  REPLACE(phone, '-', '')  AS phone_clean,
+  UPPER(name)              AS name_upper
 FROM users
-WHERE name LIKE 'A%';  -- names starting with A`,
-    tip: 'LIKE is case-insensitive for ASCII in SQLite. For pattern matching, % matches any sequence; _ matches exactly one character.',
+WHERE name LIKE 'A%';`,
+    exampleTSQL: `-- T-SQL / SSMS equivalents
+SELECT
+  LEN(name)                AS name_len,        -- LEN not LENGTH
+  LEFT(email, CHARINDEX('@', email) - 1) AS email_local,  -- not INSTR
+  REPLACE(phone, '-', '')  AS phone_clean,     -- same as SQLite
+  UPPER(name)              AS name_upper,       -- same
+  STUFF(name, 1, 1, UPPER(LEFT(name,1))) AS name_capitalized  -- T-SQL only
+FROM users
+WHERE name LIKE 'A%';`,
+    tip: 'Key differences: LENGTH → LEN, SUBSTR → SUBSTRING, INSTR → CHARINDEX (reversed args!)',
   },
 
   // ───── SET OPERATIONS ─────
   {
     id: 'union', category: 'Set Operations', title: 'UNION / UNION ALL / INTERSECT / EXCEPT',
-    summary: 'Combine results from two SELECT statements. Columns must match in count and compatible types.',
-    example: `-- UNION removes duplicates; UNION ALL keeps them (faster)
+    summary: 'Combine results from two SELECTs. Column counts and compatible types must match.',
+    example: `-- SQLite: UNION removes duplicates; UNION ALL is faster
 SELECT city FROM customers
-UNION
+UNION ALL
 SELECT city FROM suppliers;
 
--- Rows in set A but not in set B
+-- Rows in A but not in B:
 SELECT product_id FROM old_catalog
 EXCEPT
 SELECT product_id FROM new_catalog;`,
-    tip: 'UNION ALL is almost always faster than UNION because UNION requires a deduplication pass. Use UNION only when duplicates are actually a problem.',
+    exampleTSQL: `-- T-SQL: same UNION / UNION ALL / INTERSECT / EXCEPT
+SELECT city FROM customers
+UNION ALL
+SELECT city FROM suppliers;
+
+-- T-SQL also has EXCEPT (not MINUS like Oracle):
+SELECT product_id FROM old_catalog
+EXCEPT
+SELECT product_id FROM new_catalog;`,
+    tip: 'UNION ALL is almost always faster than UNION — use UNION only when deduplication is actually needed.',
   },
 
   // ───── PERFORMANCE ─────
   {
     id: 'index-basics', category: 'Performance', title: 'Indexes',
-    summary: 'An index lets the database find rows without scanning the whole table — like a book index. Trade-off: faster reads, slightly slower writes.',
-    example: `-- Create an index on a frequently-filtered column
+    summary: 'An index lets the database find rows without a full scan. Trade-off: faster reads, slower writes.',
+    example: `-- SQLite index creation
 CREATE INDEX idx_orders_customer ON orders(customer_id);
 
--- Composite index for common filter+sort patterns
-CREATE INDEX idx_orders_date_status ON orders(order_date, status);`,
-    tip: 'Indexes help most on high-cardinality columns (many distinct values) used in WHERE, JOIN ON, or ORDER BY. An index on a boolean column rarely helps.',
-  },
-  {
-    id: 'query-cost', category: 'Performance', title: 'Why Queries Slow Down',
-    summary: 'Common causes: full table scans (no index), functions on indexed columns, N+1 queries, SELECT *, large Cartesian joins.',
-    example: `-- Bad: function on column prevents index use
-SELECT * FROM orders WHERE YEAR(created_at) = 2024;
+-- Composite index: equality col first, range col second
+CREATE INDEX idx_orders_status_date ON orders(status, created_at);`,
+    exampleTSQL: `-- T-SQL / SQL Server index creation
+CREATE INDEX idx_orders_customer ON orders(customer_id);
 
--- Good: range filter can use index on created_at
-SELECT * FROM orders
-WHERE created_at >= '2024-01-01' AND created_at < '2025-01-01';`,
-    tip: 'Apply transformations to the literal value, not the column. This keeps the column "bare" so the index can be used.',
+-- Clustered index (T-SQL concept — physically orders the table)
+CREATE CLUSTERED INDEX idx_pk ON orders(order_id);
+
+-- Non-clustered composite with included columns (covering index)
+CREATE NONCLUSTERED INDEX idx_orders_status_date
+  ON orders(status, created_at)
+  INCLUDE (customer_id, total_amount);
+-- INCLUDE avoids key lookups for included columns`,
+    tip: 'SQL Server has clustered and non-clustered indexes (SQLite only has non-clustered). Each table can have ONE clustered index.',
   },
 
   // ───── CASE / CONDITIONAL ─────
   {
     id: 'case-when', category: 'Conditional Logic', title: 'CASE WHEN',
-    summary: 'CASE evaluates conditions top-to-bottom and returns the THEN value of the first true condition.',
-    example: `SELECT name, salary,
+    summary: 'CASE evaluates conditions top-to-bottom and returns the THEN of the first true condition.',
+    example: `-- SQLite: CASE WHEN
+SELECT name, salary,
   CASE
     WHEN salary >= 100000 THEN 'Senior'
     WHEN salary >= 60000  THEN 'Mid'
     ELSE 'Junior'
   END AS level
 FROM employees;`,
-    tip: 'Order matters! Put the most restrictive condition first. A common bug is checking >= 60000 before >= 100000 — high earners fall into the wrong bucket.',
+    exampleTSQL: `-- T-SQL: CASE WHEN is identical + IIF shorthand
+SELECT name, salary,
+  CASE
+    WHEN salary >= 100000 THEN 'Senior'
+    WHEN salary >= 60000  THEN 'Mid'
+    ELSE 'Junior'
+  END AS level,
+  -- T-SQL IIF: single condition shorthand
+  IIF(salary >= 100000, 'High Earner', 'Standard') AS earner_type,
+  -- T-SQL CHOOSE: index-based selection
+  CHOOSE(MONTH(GETDATE()), 'Jan','Feb','Mar','Apr','May','Jun',
+         'Jul','Aug','Sep','Oct','Nov','Dec') AS current_month
+FROM employees;`,
+    tip: 'Order matters! Put the most restrictive condition first — a common bug is checking >= 60000 before >= 100000.',
   },
 
   // ───── SCHEMA DESIGN ─────
   {
     id: 'normalization', category: 'Schema Design', title: 'Normalization (1NF–3NF)',
-    summary: 'Normalization eliminates data redundancy. 1NF: atomic values. 2NF: no partial dependencies. 3NF: no transitive dependencies.',
-    example: `-- Denormalized (bad): repeats category_name with every product
-orders(order_id, product_id, product_name, category_name, quantity)
-
--- Normalized (better): category lives in its own table
-products(product_id, product_name, category_id)
+    summary: 'Normalization eliminates redundancy. 1NF: atomic values. 2NF: no partial deps. 3NF: no transitive deps.',
+    example: `-- Normalized design
+customers(customer_id, name, email)
+products(product_id, name, category_id)
 categories(category_id, category_name)
 order_items(order_id, product_id, quantity)`,
-    tip: 'Ask "if I update a fact in one place, do I need to update it elsewhere?" If yes, you have redundancy to remove.',
-  },
-  {
-    id: 'foreign-keys', category: 'Schema Design', title: 'Primary & Foreign Keys',
-    summary: 'Primary keys uniquely identify rows. Foreign keys enforce referential integrity — a row cannot reference a non-existent parent.',
-    example: `CREATE TABLE orders (
-  order_id    INTEGER PRIMARY KEY,
-  customer_id INTEGER NOT NULL REFERENCES customers(customer_id),
-  order_date  TEXT    NOT NULL
+    exampleTSQL: `-- T-SQL CREATE TABLE with constraints
+CREATE TABLE customers (
+  customer_id INT IDENTITY(1,1) PRIMARY KEY,
+  name        NVARCHAR(100) NOT NULL,
+  email       NVARCHAR(255) UNIQUE NOT NULL
+);
+
+CREATE TABLE orders (
+  order_id    INT IDENTITY(1,1) PRIMARY KEY,
+  customer_id INT NOT NULL REFERENCES customers(customer_id),
+  order_date  DATETIME2 NOT NULL DEFAULT GETDATE()
 );`,
-    tip: 'A composite primary key (multiple columns together) is often correct for junction/bridge tables in many-to-many relationships.',
+    tip: 'Ask "if I update a fact in one place, do I need to update it elsewhere?" If yes, you have redundancy to normalize.',
   },
 ]
 
@@ -324,7 +451,10 @@ export default function ConceptsPage({ theme }) {
   const [activeCategory, setActiveCategory] = useState('All')
   const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState(null)
+  const [dialect, setDialect] = useState('sqlite')  // 'sqlite' | 'tsql'
   const isDark = theme === 'dark'
+
+  const sqlExt = dialect === 'tsql' ? sql({ dialect: MSSQL }) : sql({ dialect: SQLite })
 
   const filtered = CONCEPTS.filter(c => {
     const inCat = activeCategory === 'All' || c.category === activeCategory
@@ -338,17 +468,29 @@ export default function ConceptsPage({ theme }) {
       <div className="page-header">
         <h1 className="page-title">SQL Concepts</h1>
         <p className="page-subtitle">
-          Reference guide for every concept you need to crack SQL interviews — with examples and interview tips.
+          Reference guide for every concept tested in SQL interviews — with examples in both SQLite and T-SQL (SSMS).
         </p>
       </div>
 
       <div className="concepts-controls">
-        <input
-          className="concepts-search"
-          placeholder="Search concepts…"
-          value={search}
-          onChange={e => setSearch(e.target.value)}
-        />
+        <div className="concepts-controls-row">
+          <input
+            className="concepts-search"
+            placeholder="Search concepts…"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+          <div className="dialect-switcher">
+            <button
+              className={`dialect-btn ${dialect === 'sqlite' ? 'dialect-btn-active' : ''}`}
+              onClick={() => setDialect('sqlite')}
+            >SQLite</button>
+            <button
+              className={`dialect-btn ${dialect === 'tsql' ? 'dialect-btn-active' : ''}`}
+              onClick={() => setDialect('tsql')}
+            >T-SQL (SSMS)</button>
+          </div>
+        </div>
         <div className="category-pills">
           {['All', ...CATEGORIES].map(cat => (
             <button
@@ -383,15 +525,23 @@ export default function ConceptsPage({ theme }) {
               <div className="concept-card-body">
                 <p className="concept-summary">{concept.summary}</p>
 
-                <div className="concept-example-label">Example</div>
+                <div className="concept-example-label">
+                  {dialect === 'tsql' && concept.exampleTSQL ? 'T-SQL / SSMS Example' : 'Example'}
+                </div>
                 <CodeMirror
-                  value={concept.example}
-                  extensions={[sql()]}
+                  value={dialect === 'tsql' && concept.exampleTSQL ? concept.exampleTSQL : concept.example}
+                  extensions={[sqlExt]}
                   theme={isDark ? oneDark : 'light'}
                   editable={false}
                   basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, autocompletion: false }}
                   className="concept-code"
                 />
+
+                {dialect === 'tsql' && !concept.exampleTSQL && (
+                  <div className="concept-tsql-note">
+                    T-SQL syntax is identical to standard SQL for this concept.
+                  </div>
+                )}
 
                 <div className="concept-tip">
                   <span className="concept-tip-label">Interview tip</span>

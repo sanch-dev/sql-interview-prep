@@ -61,6 +61,71 @@ function buildSchemaCompletion(schemaRef, dialectRef) {
   })
 }
 
+// ── Quick inline analyzer ────────────────────────────────────────────────────
+function quickAnalyze(raw) {
+  if (!raw.trim()) return null
+  const u = raw.toUpperCase()
+  const findings = []
+
+  const joins      = (u.match(/\bJOIN\b/g)    || []).length
+  const selects    = (u.match(/\bSELECT\b/g)  || []).length
+  const subqueries = Math.max(0, selects - 1)
+  const windows    = (u.match(/\bOVER\s*\(/g) || []).length
+  const ctes       = (u.match(/\bWITH\b/g)    || []).length
+
+  let score = joins * 10 + subqueries * 15 + windows * 8 + ctes * 5
+  let complexity = score === 0 ? 'Trivial' : score < 15 ? 'Low' : score < 35 ? 'Medium' : 'High'
+  let complexityColor = score === 0 ? 'gray' : score < 15 ? 'green' : score < 35 ? 'orange' : 'red'
+
+  if (/SELECT\s+\*/i.test(raw))
+    findings.push({ icon: '⚠', text: 'Avoid SELECT * — list only needed columns.' })
+  if (/\bNOT\s+IN\b/i.test(raw))
+    findings.push({ icon: '⚠', text: 'NOT IN returns 0 rows if subquery has NULLs — prefer NOT EXISTS.' })
+  if (subqueries > 0 && ctes === 0)
+    findings.push({ icon: '💡', text: 'Subquery detected — consider a CTE (WITH) for readability.' })
+  if (/WHERE\s+\w+\s*\(/i.test(raw))
+    findings.push({ icon: '⚠', text: 'Function on WHERE column can prevent index usage.' })
+  if (joins >= 3)
+    findings.push({ icon: '💡', text: `${joins} JOINs — ensure each join key is indexed.` })
+  if (windows > 0 && subqueries > 1)
+    findings.push({ icon: '💡', text: 'Multiple subqueries could be replaced by window functions for better performance.' })
+
+  return { complexity, complexityColor, findings }
+}
+
+function MiniAnalysis({ sql: sqlText }) {
+  const [open, setOpen] = useState(false)
+  const result = useMemo(() => quickAnalyze(sqlText), [sqlText])
+  if (!result) return null
+
+  return (
+    <div className="mini-analysis">
+      <button className="mini-analysis-toggle" onClick={() => setOpen(o => !o)}>
+        <span className={`mini-complexity mini-complexity-${result.complexityColor}`}>
+          ⚡ {result.complexity} complexity
+        </span>
+        {result.findings.length > 0 && (
+          <span className="mini-findings-count">
+            {result.findings.length} insight{result.findings.length !== 1 ? 's' : ''}
+          </span>
+        )}
+        {result.findings.length === 0 && <span className="mini-clean">✓ Clean</span>}
+        <span className="mini-chevron">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && result.findings.length > 0 && (
+        <div className="mini-findings">
+          {result.findings.map((f, i) => (
+            <div key={i} className="mini-finding">
+              <span>{f.icon}</span>
+              <span>{f.text}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const TIMER_LIMITS = { Easy: 10 * 60, Medium: 15 * 60, Hard: 20 * 60 }
 const MIN_RESULTS_H = 140
 const MAX_RESULTS_H = 560
@@ -94,6 +159,7 @@ export default function EditorPane({ question, initialValue, results, refResult,
   const [code, setCode]             = useState(initialValue || '')
   const [dialectKey, setDialectKey] = useState('sqlite')
   const [resultsHeight, setResultsHeight] = useState(DEFAULT_RESULTS_H)
+  const [lastRunCode, setLastRunCode] = useState(null)
   const isDark = theme === 'dark'
 
   const currentDialect = DIALECTS.find((d) => d.value === dialectKey) || DIALECTS[0]
@@ -157,8 +223,8 @@ export default function EditorPane({ question, initialValue, results, refResult,
 
   function prepare(raw) { return dialectKey === 'mssql' ? adaptTSQLToSQLite(raw) : raw }
 
-  const handleRun    = useCallback(() => { onRun(prepare(code)) },    [code, onRun, dialectKey])
-  const handleSubmit = useCallback(() => { onSubmit(prepare(code)) }, [code, onSubmit, dialectKey])
+  const handleRun    = useCallback(() => { setLastRunCode(code); onRun(prepare(code)) },    [code, onRun, dialectKey])
+  const handleSubmit = useCallback(() => { setLastRunCode(code); onSubmit(prepare(code)) }, [code, onSubmit, dialectKey])
 
   const runKeymap = Prec.highest(keymap.of([
     { key: 'Ctrl-Enter', run: () => { handleRun(); return true } },
@@ -249,6 +315,8 @@ export default function EditorPane({ question, initialValue, results, refResult,
         dialectKey={dialectKey}
         height={resultsHeight}
       />
+
+      {lastRunCode && <MiniAnalysis sql={lastRunCode} />}
     </div>
   )
 }

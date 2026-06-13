@@ -35,8 +35,7 @@ INSERT INTO employees VALUES
  (7, 'Grace',   'HR',          63000),
  (8, 'Hank',    'Engineering', 91000);
 """,
-        "broken_sql": """-- BUG: `name` is selected but not in GROUP BY
-SELECT department, name, COUNT(*) AS headcount
+        "broken_sql": """SELECT department, name, COUNT(*) AS headcount
 FROM employees
 GROUP BY department
 ORDER BY department;""",
@@ -89,8 +88,7 @@ INSERT INTO employees VALUES
  (7, 'Grace',   'Finance',     91000),
  (8, 'Hank',    'Engineering', 91000);
 """,
-        "broken_sql": """-- BUG: can't use aggregate function in WHERE
-SELECT department, AVG(salary) AS avg_salary
+        "broken_sql": """SELECT department, AVG(salary) AS avg_salary
 FROM employees
 WHERE AVG(salary) > 80000
 GROUP BY department
@@ -142,8 +140,7 @@ INSERT INTO employees VALUES
  (5, 'Eve',     4),
  (6, 'Frank',   4);
 """,
-        "broken_sql": """-- BUG: `= NULL` always evaluates to NULL (never true)
-SELECT name, manager_id
+        "broken_sql": """SELECT name, manager_id
 FROM employees
 WHERE manager_id = NULL;""",
         "solution": """
@@ -199,8 +196,7 @@ INSERT INTO orders VALUES
  (4, 2, 200.00),
  (5, 3, 75.50);
 """,
-        "broken_sql": """-- BUG: INNER JOIN drops customers with no orders
-SELECT c.name, COUNT(o.order_id) AS order_count
+        "broken_sql": """SELECT c.name, COUNT(o.order_id) AS order_count
 FROM customers c
 INNER JOIN orders o ON c.customer_id = o.customer_id
 GROUP BY c.customer_id, c.name
@@ -254,8 +250,7 @@ INSERT INTO employees VALUES
  (6, 'Frank',   4),
  (7, 'Grace',   2);
 """,
-        "broken_sql": """-- BUG: manager_id has NULLs → NOT IN returns 0 rows
-SELECT name
+        "broken_sql": """SELECT name
 FROM employees
 WHERE emp_id NOT IN (SELECT manager_id FROM employees)
 ORDER BY name;""",
@@ -311,8 +306,7 @@ INSERT INTO employees VALUES
  (5, 'Eve',     68000),
  (6, 'Frank',  105000);
 """,
-        "broken_sql": """-- BUG: ASC gives rank 1 to the lowest salary
-SELECT name, salary,
+        "broken_sql": """SELECT name, salary,
     RANK() OVER (ORDER BY salary ASC) AS salary_rank
 FROM employees
 ORDER BY salary_rank;""",
@@ -376,8 +370,7 @@ INSERT INTO sales VALUES
  (5, 1, 999.00, '2024-01-14'),
  (6, 2,  29.99, '2024-01-15');
 """,
-        "broken_sql": """-- BUG: missing ON clause → Cartesian product (4 products × 6 sales = 24 rows)
-SELECT s.sale_id, p.product_name, s.amount
+        "broken_sql": """SELECT s.sale_id, p.product_name, s.amount
 FROM sales s
 JOIN products p
 WHERE s.amount > 50
@@ -434,8 +427,7 @@ INSERT INTO employees VALUES
  (6, 'Frank',   0),
  (7, 'Grace',   5);
 """,
-        "broken_sql": """-- BUG: >= 2 is checked before >= 5, so Seniors fall into Mid
-SELECT name, years_exp,
+        "broken_sql": """SELECT name, years_exp,
     CASE
         WHEN years_exp >= 2 THEN 'Mid'
         WHEN years_exp >= 5 THEN 'Senior'
@@ -495,8 +487,7 @@ INSERT INTO orders VALUES
  (5, '2024-02-01',  310.00),
  (6, '2024-02-14',   45.00);
 """,
-        "broken_sql": """-- BUG: January has 31 days — '2024-01-30' misses Jan 31
-SELECT order_id, order_date, amount
+        "broken_sql": """SELECT order_id, order_date, amount
 FROM orders
 WHERE order_date BETWEEN '2024-01-01' AND '2024-01-30'
 ORDER BY order_date;""",
@@ -572,8 +563,7 @@ INSERT INTO order_items VALUES
  (4, 3, 2, 3),
  (5, 4, 1, 1);
 """,
-        "broken_sql": """-- BUG: multiple electronics items per order → fan-out → duplicate names
-SELECT c.name
+        "broken_sql": """SELECT c.name
 FROM customers c
 JOIN orders o      ON c.customer_id = o.customer_id
 JOIN order_items i ON o.order_id    = i.order_id
