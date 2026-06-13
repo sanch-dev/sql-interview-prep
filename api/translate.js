@@ -34,7 +34,7 @@ function adaptTSQL(sql) {
 
   // DATEADD(part, n, date)  →  (date + INTERVAL 'n part')
   out = out.replace(/\bDATEADD\s*\(\s*(year|month|day|hour|minute|second)\s*,\s*(-?\d+)\s*,\s*([^)]+)\)/gi,
-    (_, part, n, date) => `(${date.trim()}::date + INTERVAL '${n} ${part}s')`
+    (_, part, n, date) => `(${date.trim()}::date + INTERVAL '${n} ${part}s')::date::text`
   )
 
   // DATEDIFF(part, start, end)  →  EXTRACT(...)
