@@ -3,6 +3,7 @@ import { useProgress } from '../contexts/ProgressContext'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
+import CoachingBanner from './CoachingBanner'
 
 const NOTES_KEY = 'sqlforge_notes'
 
@@ -163,7 +164,7 @@ function ddlOnly(schema) {
     .trim()
 }
 
-export default function ProblemPane({ question, theme, sampleTables = {} }) {
+export default function ProblemPane({ question, theme, sampleTables = {}, onHintReveal }) {
   const { progress } = useProgress()
   const status = progress[question.id]?.status || 'todo'
   const [hintsShown, setHintsShown]     = useState(0)
@@ -213,6 +214,8 @@ export default function ProblemPane({ question, theme, sampleTables = {} }) {
         className="problem-description"
         dangerouslySetInnerHTML={{ __html: question.description }}
       />
+
+      <CoachingBanner questionId={question.id} />
 
       <ConceptPanel category={question.category} />
 
@@ -264,7 +267,10 @@ export default function ProblemPane({ question, theme, sampleTables = {} }) {
           </div>
         ))}
         {hintsShown < question.hints.length && (
-          <button className="btn btn-ghost btn-sm" onClick={() => setHintsShown((n) => n + 1)}>
+          <button className="btn btn-ghost btn-sm" onClick={() => {
+            setHintsShown((n) => n + 1)
+            onHintReveal?.()
+          }}>
             Show hint {hintsShown + 1}
           </button>
         )}

@@ -3,6 +3,31 @@ import { useProgress } from '../contexts/ProgressContext'
 import { STAGES, getMastery, getNextUp, getStageStats } from '../lib/stages'
 import DonutRing from './DonutRing'
 
+function SidebarReadiness({ score, masteredCount, topWeakSpots }) {
+  const color = score >= 70 ? '#16a34a' : score >= 40 ? '#f59e0b' : '#3b82f6'
+  return (
+    <div className="sb-readiness">
+      <div className="sb-readiness-row">
+        <span className="sb-readiness-label">Readiness</span>
+        <span className="sb-readiness-score" style={{ color }}>{score}%</span>
+      </div>
+      <div className="sb-readiness-bar">
+        <div className="sb-readiness-fill" style={{ width: `${score}%`, background: color }} />
+      </div>
+      {masteredCount > 0 && (
+        <span className="sb-mastered-count">⭐ {masteredCount} mastered</span>
+      )}
+      {topWeakSpots.length > 0 && (
+        <div className="sb-weakspots">
+          {topWeakSpots.map(({ category }) => (
+            <span key={category} className="sb-weakspot-tag">⚠ {category}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 const DIFFICULTIES = ['All', 'Easy', 'Medium', 'Hard']
 const STATUSES = [
   { value: 'All',       label: 'All status'    },
@@ -18,7 +43,7 @@ function StatusDot({ status }) {
 }
 
 export default function Sidebar({ questions, selectedId, onSelect, mobileOpen, onMobileClose }) {
-  const { progress, reviewMarks } = useProgress()
+  const { progress, reviewMarks, readinessScore, masteredCount, topWeakSpots } = useProgress()
 
   const [search,       setSearch]       = useState('')
   const [difficulty,   setDifficulty]   = useState('All')
@@ -106,6 +131,13 @@ export default function Sidebar({ questions, selectedId, onSelect, mobileOpen, o
       {mobileOpen && <div className="sidebar-backdrop" onClick={onMobileClose} />}
 
       <aside className={`sidebar ${mobileOpen ? 'sidebar-mobile-open' : ''}`}>
+
+        {/* ── Readiness score ─────────────────────────── */}
+        <SidebarReadiness
+          score={readinessScore}
+          masteredCount={masteredCount}
+          topWeakSpots={topWeakSpots}
+        />
 
         {/* ── Search bar ──────────────────────────────── */}
         <div className="sb-search-row">

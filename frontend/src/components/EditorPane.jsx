@@ -7,6 +7,7 @@ import { keymap } from '@codemirror/view'
 import { Prec } from '@codemirror/state'
 import { autocompletion } from '@codemirror/autocomplete'
 import ResultsPanel from './ResultsPanel'
+import PatternDebrief from './PatternDebrief'
 
 const SQL_KEYWORDS = [
   'SELECT','DISTINCT','FROM','WHERE','GROUP BY','HAVING','ORDER BY','LIMIT','OFFSET',
@@ -143,7 +144,7 @@ function formatTime(s) {
 }
 
 
-export default function EditorPane({ question, initialValue, results, refResult, isRunning, sampleTables = {}, onRun, onSubmit, onSave, onDialectChange, theme }) {
+export default function EditorPane({ question, initialValue, results, refResult, isRunning, sampleTables = {}, onRun, onSubmit, onSave, onDialectChange, showDebrief, justMastered, onDismissDebrief, theme }) {
   const [code, setCode]             = useState(initialValue || '')
   const [dialectKey, setDialectKey] = useState('sqlite')
   const [resultsHeight, setResultsHeight] = useState(DEFAULT_RESULTS_H)
@@ -301,6 +302,14 @@ export default function EditorPane({ question, initialValue, results, refResult,
         dialectKey={dialectKey}
         height={resultsHeight}
       />
+
+      {showDebrief && (
+        <PatternDebrief
+          questionId={question.id}
+          mastered={justMastered}
+          onDismiss={onDismissDebrief}
+        />
+      )}
 
       {lastRunCode && <MiniAnalysis sql={lastRunCode} />}
     </div>

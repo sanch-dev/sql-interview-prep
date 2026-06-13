@@ -11,21 +11,53 @@ function getGreeting() {
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening'
 }
 
+function ReadinessMeter({ score }) {
+  const color = score >= 70 ? '#16a34a' : score >= 40 ? '#f59e0b' : '#3b82f6'
+  const label = score >= 70 ? 'Interview Ready' : score >= 40 ? 'Building Skills' : 'Just Starting'
+
+  return (
+    <div className="readiness-meter">
+      <div className="readiness-ring-wrap">
+        <svg viewBox="0 0 64 64" className="readiness-ring-svg">
+          <circle cx="32" cy="32" r="27" fill="none" stroke="var(--border)" strokeWidth="6" />
+          <circle
+            cx="32" cy="32" r="27"
+            fill="none"
+            stroke={color}
+            strokeWidth="6"
+            strokeDasharray={`${(score / 100) * 169.6} 169.6`}
+            strokeLinecap="round"
+            transform="rotate(-90 32 32)"
+          />
+        </svg>
+        <div className="readiness-ring-inner">
+          <span className="readiness-ring-num">{score}</span>
+          <span className="readiness-ring-pct">%</span>
+        </div>
+      </div>
+      <div className="readiness-meta">
+        <span className="readiness-title">Readiness Score</span>
+        <span className="readiness-label-text" style={{ color }}>{label}</span>
+        <span className="readiness-hint">Mastered questions count double</span>
+      </div>
+    </div>
+  )
+}
+
 export default function Welcome({ questions, onSelect }) {
   const { user }    = useAuth()
-  const { progress, solvedCount, streak, todaySolved } = useProgress()
+  const { progress, solvedCount, streak, todaySolved, readinessScore, masteredCount, topWeakSpots } = useProgress()
 
   const total  = questions.length
   const name   = user?.email?.split('@')[0] || 'there'
 
   const nextUp     = useMemo(() => getNextUp(questions, progress), [questions, progress])
   const stageStats = useMemo(() => getStageStats(questions, progress), [questions, progress])
-  const overallPct = total ? Math.round((solvedCount / total) * 100) : 0
 
   return (
     <div className="welcome">
 
-      {/* ── Greeting + stats ────────────────────────────────── */}
+      {/* ── Greeting + readiness ────────────────────────────── */}
       <div className="wh-top">
         <div className="wh-greeting">
           <h1 className="wh-title">
@@ -34,27 +66,51 @@ export default function Welcome({ questions, onSelect }) {
           <p className="wh-sub">
             {solvedCount === 0
               ? 'Start your SQL interview prep journey.'
-              : `${solvedCount} of ${total} solved — keep the momentum going.`}
+              : `${solvedCount} solved · ${masteredCount} mastered — keep the momentum.`}
           </p>
         </div>
 
-        <div className="wh-stats-row">
-          {streak > 0 && (
-            <div className="wh-stat">
-              <span className="wh-stat-val">🔥 {streak}</span>
-              <span className="wh-stat-lbl">day streak</span>
-            </div>
-          )}
+        <ReadinessMeter score={readinessScore} />
+      </div>
+
+      {/* ── Stats row ───────────────────────────────────────── */}
+      <div className="wh-stats-row">
+        {streak > 0 && (
           <div className="wh-stat">
-            <span className="wh-stat-val">{todaySolved}<span className="wh-stat-dim">/{DAILY_GOAL}</span></span>
-            <span className="wh-stat-lbl">today's goal</span>
+            <span className="wh-stat-val">🔥 {streak}</span>
+            <span className="wh-stat-lbl">day streak</span>
           </div>
-          <div className="wh-stat">
-            <span className="wh-stat-val">{overallPct}<span className="wh-stat-dim">%</span></span>
-            <span className="wh-stat-lbl">complete</span>
-          </div>
+        )}
+        <div className="wh-stat">
+          <span className="wh-stat-val">{todaySolved}<span className="wh-stat-dim">/{DAILY_GOAL}</span></span>
+          <span className="wh-stat-lbl">today's goal</span>
+        </div>
+        <div className="wh-stat">
+          <span className="wh-stat-val">{solvedCount}<span className="wh-stat-dim">/{total}</span></span>
+          <span className="wh-stat-lbl">solved</span>
+        </div>
+        <div className="wh-stat">
+          <span className="wh-stat-val">{masteredCount}<span className="wh-stat-dim">/{total}</span></span>
+          <span className="wh-stat-lbl">mastered</span>
         </div>
       </div>
+
+      {/* ── Weak spots ─────────────────────────────────────── */}
+      {topWeakSpots.length > 0 && (
+        <div className="wh-weakspots">
+          <h2 className="wh-section-title">Focus Areas</h2>
+          <div className="weakspot-list">
+            {topWeakSpots.map(({ category, count }) => (
+              <div key={category} className="weakspot-item">
+                <span className="weakspot-icon">⚠</span>
+                <span className="weakspot-cat">{category}</span>
+                <span className="weakspot-count">{count} wrong attempt{count !== 1 ? 's' : ''}</span>
+              </div>
+            ))}
+          </div>
+          <p className="weakspot-hint">Practice these categories to improve your readiness score.</p>
+        </div>
+      )}
 
       {/* ── Primary CTA ─────────────────────────────────────── */}
       {nextUp ? (
@@ -75,14 +131,6 @@ export default function Welcome({ questions, onSelect }) {
           <span className="wh-cta-title">🎉 All {total} questions complete — you're ready!</span>
         </div>
       )}
-
-      {/* ── Overall progress bar ────────────────────────────── */}
-      <div className="wh-prog-wrap">
-        <div className="wh-prog-bar">
-          <div className="wh-prog-fill" style={{ width: `${overallPct}%` }} />
-        </div>
-        <span className="wh-prog-label">{solvedCount} / {total} questions solved</span>
-      </div>
 
       {/* ── Stage cards ─────────────────────────────────────── */}
       <section className="wh-stages">

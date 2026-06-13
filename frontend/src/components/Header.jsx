@@ -4,16 +4,17 @@ import { useProgress } from '../contexts/ProgressContext'
 const DAILY_GOAL = 3
 
 const NAV_TABS = [
-  { id: 'practice', label: 'Practice',  icon: '⌨' },
-  { id: 'concepts', label: 'Concepts',  icon: '📚' },
-  { id: 'analyzer', label: 'Analyzer',  icon: '⚡' },
-  { id: 'debug',    label: 'Debug Lab', icon: '🔍' },
-  { id: 'schema',   label: 'Schema',    icon: '🗄' },
+  { id: 'practice',   label: 'Practice',   icon: '⌨' },
+  { id: 'concepts',   label: 'Concepts',   icon: '📚' },
+  { id: 'simulator',  label: 'Simulator',  icon: '🎯' },
+  { id: 'analyzer',   label: 'Analyzer',   icon: '⚡' },
+  { id: 'debug',      label: 'Debug Lab',  icon: '🔍' },
+  { id: 'schema',     label: 'Schema',     icon: '🗄' },
 ]
 
 export default function Header({ theme, onToggleTheme, currentPage, onChangePage, onOpenSidebar }) {
   const { user, signOut }  = useAuth()
-  const { solvedCount, streak, todaySolved } = useProgress()
+  const { solvedCount, streak, todaySolved, readinessScore } = useProgress()
   const totalQuestions = (window.QUESTIONS || []).filter(q => q.type !== 'debug').length
 
   return (
@@ -57,11 +58,9 @@ export default function Header({ theme, onToggleTheme, currentPage, onChangePage
             <span className="progress-label">today</span>
           </span>
 
-          <span className="header-progress">
-            <span className="progress-solved">{solvedCount}</span>
-            <span className="progress-sep">/</span>
-            <span className="progress-total">{totalQuestions}</span>
-            <span className="progress-label">solved</span>
+          <span className="header-readiness" title="Readiness score: mastered questions count double">
+            <span className="readiness-label">Ready</span>
+            <span className="readiness-value">{readinessScore}%</span>
           </span>
 
           <button

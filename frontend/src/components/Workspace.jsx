@@ -18,13 +18,28 @@ function writeDraft(questionId, code) {
 }
 
 export default function Workspace({ question, allQuestions, onSelect, onBack, theme }) {
-  const { progress, updateProgress, reviewMarks, toggleReviewMark } = useProgress()
+  const { progress, updateProgress, reviewMarks, toggleReviewMark, updateMastery, recordWeakSpot } = useProgress()
   const [results, setResults]           = useState(null)
   const [refResult, setRefResult]       = useState(null)
   const [isRunning, setIsRunning]       = useState(false)
   const [sampleTables, setSampleTables] = useState({})
   const [splitPct, setSplitPct]         = useState(42)
+  const [showDebrief, setShowDebrief]   = useState(false)
+  const [justMastered, setJustMastered] = useState(false)
   const splitContainerRef               = useRef(null)
+
+  // Mastery tracking refs — reset on question change
+  const wrongAttemptsRef  = useRef(0)
+  const hintsRevealedRef  = useRef(0)
+  const openedAtRef       = useRef(Date.now())
+
+  useEffect(() => {
+    wrongAttemptsRef.current = 0
+    hintsRevealedRef.current = 0
+    openedAtRef.current = Date.now()
+    setShowDebrief(false)
+    setJustMastered(false)
+  }, [question.id])
 
   const savedCode = readDraft(question.id) || progress[question.id]?.solution || ''
 
@@ -36,6 +51,10 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
     setSampleTables({})
     getTableData(question.id).then(setSampleTables)
   }, [question.id])
+
+  const handleHintReveal = useCallback(() => {
+    hintsRevealedRef.current++
+  }, [])
 
   const handleRun = useCallback(async (sql, dialect = 'sqlite') => {
     setIsRunning(true)
@@ -61,8 +80,22 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
 
     const status = correct ? 'solved' : 'attempted'
     updateProgress(question.id, { status, solution: sql })
+
+    if (correct) {
+      const solveTimeMs    = Date.now() - openedAtRef.current
+      const noHints        = hintsRevealedRef.current === 0
+      const firstAttempt   = wrongAttemptsRef.current === 0
+      const mastered       = noHints && firstAttempt
+      updateMastery(question.id, { mastered, solveTimeMs })
+      setJustMastered(mastered)
+      setShowDebrief(true)
+    } else {
+      wrongAttemptsRef.current++
+      recordWeakSpot(question.category)
+    }
+
     setIsRunning(false)
-  }, [question.id, updateProgress])
+  }, [question.id, question.category, updateProgress, updateMastery, recordWeakSpot])
 
   const handleSave = useCallback((code) => {
     writeDraft(question.id, code)
@@ -104,7 +137,12 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
 
       <div className="workspace-split" ref={splitContainerRef}>
         <div className="problem-pane-sizer" style={{ width: `${splitPct}%` }}>
-          <ProblemPane question={question} theme={theme} sampleTables={sampleTables} />
+          <ProblemPane
+            question={question}
+            theme={theme}
+            sampleTables={sampleTables}
+            onHintReveal={handleHintReveal}
+          />
         </div>
         <div className="split-drag-handle" onMouseDown={startSplitDrag} title="Drag to resize" />
         <EditorPane
@@ -117,6 +155,9 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
           onRun={handleRun}
           onSubmit={handleSubmit}
           onSave={handleSave}
+          showDebrief={showDebrief}
+          justMastered={justMastered}
+          onDismissDebrief={() => setShowDebrief(false)}
           theme={theme}
         />
       </div>
