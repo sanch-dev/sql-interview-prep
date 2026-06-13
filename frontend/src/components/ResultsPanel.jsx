@@ -1,5 +1,3 @@
-import { useEffect, useState } from 'react'
-
 function escapeHtml(text) {
   return String(text ?? 'NULL')
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
@@ -110,33 +108,7 @@ function tagRows(userRows, refRows, columns) {
   })
 }
 
-export default function ResultsPanel({ result, refResult, isRunning, tableNames = [], dialectKey = 'sqlite', height, onFetchStats, onFetchPlan, stats, plan }) {
-  const [tab, setTab] = useState('results')
-  const [statsLoading, setStatsLoading] = useState(false)
-  const [planLoading, setPlanLoading]   = useState(false)
-
-  // Reset to results tab on new query
-  const resultKey = result ? result.rows?.length + result.columns?.join('') : ''
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useEffect(() => { setTab('results') }, [resultKey])
-
-  async function handleStatsTab() {
-    setTab('stats')
-    if (!stats && onFetchStats && !statsLoading) {
-      setStatsLoading(true)
-      await onFetchStats()
-      setStatsLoading(false)
-    }
-  }
-  async function handlePlanTab() {
-    setTab('plan')
-    if (!plan && onFetchPlan && !planLoading) {
-      setPlanLoading(true)
-      await onFetchPlan()
-      setPlanLoading(false)
-    }
-  }
-
+export default function ResultsPanel({ result, refResult, isRunning, tableNames = [], dialectKey = 'sqlite', height }) {
   const style = height ? { height, minHeight: height } : {}
 
   if (isRunning) return (
@@ -180,8 +152,6 @@ export default function ResultsPanel({ result, refResult, isRunning, tableNames 
   const allColumns = showDiff ? [...new Set([...result.columns, ...refResult.columns])] : result.columns
   const rowTags    = showDiff ? tagRows(result.rows, refResult.rows, allColumns) : null
 
-  const hasTabs = !result.error && onFetchStats
-
   return (
     <div className="results-panel" style={style}>
       {isSubmit && (
@@ -192,21 +162,7 @@ export default function ResultsPanel({ result, refResult, isRunning, tableNames 
         </div>
       )}
 
-      {hasTabs && (
-        <div className="results-tabs">
-          <button className={`results-tab${tab === 'results' ? ' results-tab-active' : ''}`} onClick={() => setTab('results')}>
-            Results {result.executionTime != null ? <span className="tab-time">{result.executionTime}ms</span> : null}
-          </button>
-          <button className={`results-tab${tab === 'stats' ? ' results-tab-active' : ''}`} onClick={handleStatsTab}>
-            IO Stats
-          </button>
-          <button className={`results-tab${tab === 'plan' ? ' results-tab-active' : ''}`} onClick={handlePlanTab}>
-            Exec Plan
-          </button>
-        </div>
-      )}
-
-      {tab === 'results' && (showDiff ? (
+      {showDiff ? (
         <div className="diff-scroll">
           <div className="diff-legend">
             <span className="diff-legend-item diff-legend-extra">Extra / wrong row</span>
@@ -236,7 +192,10 @@ export default function ResultsPanel({ result, refResult, isRunning, tableNames 
                   ))}
                 </tbody>
               </table>
-              <div className="results-footer">{result.rows.length} row{result.rows.length !== 1 ? 's' : ''}</div>
+              <div className="results-footer">
+                {result.rows.length} row{result.rows.length !== 1 ? 's' : ''}
+                {result.executionTime != null && <span className="footer-time"> · {result.executionTime} ms</span>}
+              </div>
             </>
           )}
           {showExpected && (
@@ -244,56 +203,6 @@ export default function ResultsPanel({ result, refResult, isRunning, tableNames 
               <summary className="expected-summary">Expected output</summary>
               <ResultTable columns={refResult.columns} rows={refResult.rows} />
             </details>
-          )}
-        </div>
-      ))}
-
-      {tab === 'stats' && (
-        <div className="results-scroll stats-panel">
-          {statsLoading ? (
-            <div className="results-loading">Fetching IO stats…</div>
-          ) : stats?.error ? (
-            <div className="results-empty">{stats.error}</div>
-          ) : stats ? (
-            <>
-              <div className="stat-row">
-                <span className="stat-label">Client round-trip</span>
-                <span className="stat-value">{stats.clientMs} ms</span>
-              </div>
-              {stats.serverMs != null && (
-                <div className="stat-row">
-                  <span className="stat-label">SQL Server elapsed</span>
-                  <span className="stat-value">{stats.serverMs} ms</span>
-                </div>
-              )}
-              {Object.keys(stats.logicalReads || {}).length > 0 && (
-                <>
-                  <div className="stat-section-label">Logical reads (buffer cache hits)</div>
-                  {Object.entries(stats.logicalReads).map(([tbl, n]) => (
-                    <div key={tbl} className="stat-row">
-                      <span className="stat-label stat-table">{tbl}</span>
-                      <span className="stat-value">{n} page{n !== 1 ? 's' : ''}</span>
-                    </div>
-                  ))}
-                </>
-              )}
-            </>
-          ) : (
-            <div className="results-empty">Click "IO Stats" to load.</div>
-          )}
-        </div>
-      )}
-
-      {tab === 'plan' && (
-        <div className="results-scroll plan-panel">
-          {planLoading ? (
-            <div className="results-loading">Fetching execution plan…</div>
-          ) : plan?.error ? (
-            <div className="results-empty">{plan.error}</div>
-          ) : plan?.lines?.length > 0 ? (
-            <pre className="plan-text">{plan.lines.join('\n')}</pre>
-          ) : (
-            <div className="results-empty">Click "Exec Plan" to load estimated plan.</div>
           )}
         </div>
       )}

@@ -36,32 +36,6 @@ export async function getTableData(questionId) {
   }
 }
 
-export async function getStats(sql, questionId) {
-  try {
-    const res = await fetch(`${API}/api/stats`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sql, questionId }),
-    })
-    return await res.json()
-  } catch (err) {
-    return { error: `Network error: ${err.message}` }
-  }
-}
-
-export async function getPlan(sql, questionId) {
-  try {
-    const res = await fetch(`${API}/api/plan`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ sqlText: sql, questionId }),
-    })
-    return await res.json()
-  } catch (err) {
-    return { error: `Network error: ${err.message}` }
-  }
-}
-
 export function compareResults(userResult, refResult, orderMatters = false) {
   if (userResult.error || refResult.error) return false
   if (userResult.rows.length !== refResult.rows.length) return false
