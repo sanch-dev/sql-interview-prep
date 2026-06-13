@@ -5,7 +5,61 @@ import { EditorView } from '@codemirror/view'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { keymap } from '@codemirror/view'
 import { Prec } from '@codemirror/state'
+import { autocompletion } from '@codemirror/autocomplete'
 import ResultsPanel from './ResultsPanel'
+
+const SQL_KEYWORDS = [
+  'SELECT','DISTINCT','FROM','WHERE','GROUP BY','HAVING','ORDER BY','LIMIT','OFFSET',
+  'JOIN','INNER JOIN','LEFT JOIN','LEFT OUTER JOIN','RIGHT JOIN','FULL OUTER JOIN','CROSS JOIN','ON','USING',
+  'AND','OR','NOT','IN','NOT IN','EXISTS','NOT EXISTS','BETWEEN','LIKE','IS','IS NOT','IS NULL','IS NOT NULL',
+  'UNION','UNION ALL','INTERSECT','EXCEPT','WITH','RECURSIVE',
+  'COUNT','SUM','AVG','MAX','MIN','GROUP_CONCAT',
+  'OVER','PARTITION BY','ROWS BETWEEN','RANGE BETWEEN','UNBOUNDED PRECEDING','CURRENT ROW','UNBOUNDED FOLLOWING',
+  'RANK','DENSE_RANK','ROW_NUMBER','NTILE','PERCENT_RANK','CUME_DIST',
+  'LAG','LEAD','FIRST_VALUE','LAST_VALUE','NTH_VALUE',
+  'ABS','ROUND','CEIL','FLOOR','MOD',
+  'LENGTH','UPPER','LOWER','TRIM','LTRIM','RTRIM','SUBSTR','REPLACE','INSTR','PRINTF','COALESCE','NULLIF','IFNULL','IIF',
+  'DATE','TIME','DATETIME','JULIANDAY','STRFTIME','UNIXEPOCH',
+  'CAST','TYPEOF','NULL',
+  'CASE','WHEN','THEN','ELSE','END','AS','ALL','ANY',
+  'INTEGER','INT','REAL','FLOAT','TEXT','VARCHAR','BLOB','NUMERIC','BOOLEAN',
+  'INSERT','INTO','UPDATE','SET','DELETE',
+  'CREATE','TABLE','INDEX','DROP','ALTER','ADD','COLUMN',
+  'PRIMARY KEY','FOREIGN KEY','REFERENCES','UNIQUE','NOT NULL','DEFAULT','CHECK',
+]
+
+const TSQL_EXTRA = [
+  'TOP','ISNULL','LEN','GETDATE','GETUTCDATE','CHARINDEX','PATINDEX','STUFF',
+  'DATEADD','DATEDIFF','DATEPART','DATENAME','CONVERT','TRY_CAST','TRY_CONVERT',
+  'FORMAT','IIF','CHOOSE','EOMONTH','ISDATE','ISNUMERIC',
+  'CROSS APPLY','OUTER APPLY',
+  'NVARCHAR','BIGINT','SMALLINT','TINYINT','BIT','MONEY','DATETIME2','UNIQUEIDENTIFIER',
+]
+
+function buildSchemaCompletion(schemaRef, dialectRef) {
+  return autocompletion({
+    activateOnTyping: true,
+    override: [(ctx) => {
+      const word = ctx.matchBefore(/\w+/)
+      if (!word || (word.from === word.to && !ctx.explicit)) return null
+
+      const schema = schemaRef.current
+      const opts = []
+
+      Object.entries(schema).forEach(([tbl, cols]) => {
+        opts.push({ label: tbl, type: 'class', detail: 'table', boost: 10 })
+        cols.forEach(col => opts.push({ label: col, type: 'property', detail: tbl, boost: 8 }))
+      })
+
+      const kws = dialectRef.current === 'mssql'
+        ? [...SQL_KEYWORDS, ...TSQL_EXTRA]
+        : SQL_KEYWORDS
+      kws.forEach(kw => opts.push({ label: kw, type: 'keyword', boost: 1 }))
+
+      return { from: word.from, options: opts, validFor: /^\w*$/ }
+    }]
+  })
+}
 
 const TIMER_LIMITS = { Easy: 10 * 60, Medium: 15 * 60, Hard: 20 * 60 }
 const MIN_RESULTS_H = 140
@@ -50,6 +104,16 @@ export default function EditorPane({ question, initialValue, results, refResult,
     Object.entries(sampleTables).forEach(([name, { columns }]) => { schema[name] = columns })
     return schema
   }, [sampleTables])
+
+  // Refs so the stable completion extension always reads current values
+  const schemaRef  = useRef({})
+  const dialectRef = useRef('sqlite')
+  useEffect(() => { schemaRef.current  = cmSchema    }, [cmSchema])
+  useEffect(() => { dialectRef.current = dialectKey  }, [dialectKey])
+
+  // Stable custom completion — built once, reads from refs (no remount needed)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const customCompletion = useMemo(() => buildSchemaCompletion(schemaRef, dialectRef), [])
 
   // Timer
   const [secondsLeft, setSecondsLeft]   = useState(null)
@@ -106,9 +170,10 @@ export default function EditorPane({ question, initialValue, results, refResult,
     return () => clearTimeout(t)
   }, [code, onSave])
 
-  const sqlExtension = useMemo(
-    () => sql({ dialect: currentDialect.dialect, schema: cmSchema }),
-    [currentDialect.dialect, cmSchema]
+  // sql() for syntax highlighting only — no schema (avoids cache-at-mount timing bug)
+  const sqlLang = useMemo(
+    () => sql({ dialect: currentDialect.dialect }),
+    [currentDialect.dialect]
   )
 
   return (
@@ -160,16 +225,15 @@ export default function EditorPane({ question, initialValue, results, refResult,
 
       <div className="cm-wrapper">
         <CodeMirror
-          key={`${question.id}-${Object.keys(cmSchema).length > 0}`}
           value={code}
           onChange={setCode}
-          extensions={[sqlExtension, runKeymap, EditorView.lineWrapping]}
+          extensions={[sqlLang, customCompletion, runKeymap, EditorView.lineWrapping]}
           theme={isDark ? oneDark : 'light'}
           basicSetup={{
             lineNumbers: true,
             highlightActiveLine: true,
             foldGutter: false,
-            autocompletion: false, // let sql() handle completions with the real schema
+            autocompletion: false, // customCompletion extension handles this
           }}
           className="sql-editor"
         />

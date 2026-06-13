@@ -3,10 +3,18 @@ import { useProgress } from '../contexts/ProgressContext'
 
 const DAILY_GOAL = 3
 
-export default function Header({ theme, onToggleTheme }) {
+const NAV_TABS = [
+  { id: 'practice', label: 'Practice',  icon: '⌨' },
+  { id: 'concepts', label: 'Concepts',  icon: '📚' },
+  { id: 'analyzer', label: 'Analyzer',  icon: '⚡' },
+  { id: 'debug',    label: 'Debug Lab', icon: '🔍' },
+  { id: 'schema',   label: 'Schema',    icon: '🗄' },
+]
+
+export default function Header({ theme, onToggleTheme, currentPage, onChangePage }) {
   const { user, signOut } = useAuth()
   const { solvedCount, streak, todaySolved } = useProgress()
-  const totalQuestions = (window.QUESTIONS || []).length
+  const totalQuestions = (window.QUESTIONS || []).filter(q => q.type !== 'debug').length
 
   return (
     <header className="header">
@@ -17,6 +25,19 @@ export default function Header({ theme, onToggleTheme }) {
             <span className="logo-text">Query<strong>Lab</strong></span>
           </span>
         </div>
+
+        <nav className="header-nav">
+          {NAV_TABS.map(tab => (
+            <button
+              key={tab.id}
+              className={`nav-tab${currentPage === tab.id ? ' nav-tab-active' : ''}`}
+              onClick={() => onChangePage(tab.id)}
+            >
+              <span className="nav-tab-icon">{tab.icon}</span>
+              <span className="nav-tab-label">{tab.label}</span>
+            </button>
+          ))}
+        </nav>
 
         <div className="header-right">
           {streak > 0 && (
@@ -50,9 +71,7 @@ export default function Header({ theme, onToggleTheme }) {
           <div className="user-menu">
             <span className="user-avatar">{user.email[0].toUpperCase()}</span>
             <span className="user-email">{user.email}</span>
-            <button className="btn btn-ghost btn-sm" onClick={signOut}>
-              Sign out
-            </button>
+            <button className="btn btn-ghost btn-sm" onClick={signOut}>Sign out</button>
           </div>
         </div>
       </div>

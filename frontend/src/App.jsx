@@ -6,12 +6,19 @@ import Sidebar from './components/Sidebar'
 import Welcome from './components/Welcome'
 import Workspace from './components/Workspace'
 import AuthPage from './components/AuthPage'
+import ConceptsPage from './pages/ConceptsPage'
+import AnalyzerPage from './pages/AnalyzerPage'
+import DebugPage from './pages/DebugPage'
+import SchemaDesignPage from './pages/SchemaDesignPage'
 
-const allQuestions = window.QUESTIONS || []
+// Practice questions exclude debug-type entries
+const allQuestions = (window.QUESTIONS || []).filter(q => q.type !== 'debug')
+const debugQuestions = (window.QUESTIONS || []).filter(q => q.type === 'debug')
 
 function AppContent() {
   const { user, loading } = useAuth()
-  const [selected, setSelected] = useState(null)
+  const [selected, setSelected]     = useState(null)
+  const [currentPage, setCurrentPage] = useState('practice')
   const [theme, setTheme] = useState(() => {
     const saved = localStorage.getItem('sqlforge_theme') || 'light'
     document.documentElement.setAttribute('data-theme', saved)
@@ -39,30 +46,41 @@ function AppContent() {
 
   return (
     <div className="app" data-theme={theme}>
-      <Header theme={theme} onToggleTheme={toggleTheme} />
+      <Header
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        currentPage={currentPage}
+        onChangePage={(page) => { setCurrentPage(page); setSelected(null) }}
+      />
 
-      <div className="layout">
-        <Sidebar
-          questions={allQuestions}
-          selectedId={selected?.id}
-          onSelect={setSelected}
-        />
+      {currentPage === 'practice' && (
+        <div className="layout">
+          <Sidebar
+            questions={allQuestions}
+            selectedId={selected?.id}
+            onSelect={setSelected}
+          />
+          <main className="main">
+            {selected ? (
+              <Workspace
+                key={selected.id}
+                question={selected}
+                allQuestions={allQuestions}
+                onSelect={setSelected}
+                onBack={() => setSelected(null)}
+                theme={theme}
+              />
+            ) : (
+              <Welcome questions={allQuestions} onSelect={setSelected} />
+            )}
+          </main>
+        </div>
+      )}
 
-        <main className="main">
-          {selected ? (
-            <Workspace
-              key={selected.id}
-              question={selected}
-              allQuestions={allQuestions}
-              onSelect={setSelected}
-              onBack={() => setSelected(null)}
-              theme={theme}
-            />
-          ) : (
-            <Welcome questions={allQuestions} onSelect={setSelected} />
-          )}
-        </main>
-      </div>
+      {currentPage === 'concepts'  && <ConceptsPage theme={theme} />}
+      {currentPage === 'analyzer'  && <AnalyzerPage theme={theme} />}
+      {currentPage === 'debug'     && <DebugPage questions={debugQuestions} theme={theme} />}
+      {currentPage === 'schema'    && <SchemaDesignPage theme={theme} />}
     </div>
   )
 }

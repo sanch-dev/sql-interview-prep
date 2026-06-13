@@ -18,8 +18,9 @@ from q_more import EASY_MORE, MEDIUM_MORE, HARD_MORE
 from q_interview_patterns import INTERVIEW_PATTERNS
 from q_external_sources import EXTERNAL_SOURCES
 from q_sqlzoo_curated import SQLZOO_PROBLEMS
+from q_debug_challenges import DEBUG_CHALLENGES
 
-ALL = EASY + EASY_MORE + MEDIUM + MEDIUM_MORE + HARD + HARD_MORE + INTERVIEW_PATTERNS + EXTERNAL_SOURCES + SQLZOO_PROBLEMS
+ALL = EASY + EASY_MORE + MEDIUM + MEDIUM_MORE + HARD + HARD_MORE + INTERVIEW_PATTERNS + EXTERNAL_SOURCES + SQLZOO_PROBLEMS + DEBUG_CHALLENGES
 OUT = Path(__file__).parent.parent / "docs" / "js" / "questions.js"
 
 
