@@ -1,16 +1,13 @@
-import { getPool } from '../../_db.js'
-import questions from '../../questions.json' assert { type: 'json' }
+const { getPool } = require('../../_db.cjs')
+const questions = require('../../questions.json')
 
 const questionMap = Object.fromEntries(questions.map(q => [q.id, q]))
 
-function schemaName(id) {
-  return 'q_' + id.replace(/-/g, '_')
-}
+function schemaName(id) { return 'q_' + id.replace(/-/g, '_') }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   const { id } = req.query
   if (!questionMap[id]) return res.status(404).json({ error: `Unknown question: ${id}` })
-
   const schema = schemaName(id)
   const client = await getPool().connect()
   try {
@@ -20,10 +17,7 @@ export default async function handler(req, res) {
     const tables = {}
     for (const { tablename } of tablesRes.rows) {
       const data = await client.query(`SELECT * FROM ${schema}.${tablename}`)
-      tables[tablename] = {
-        columns: data.fields.map(f => f.name),
-        rows: data.rows,
-      }
+      tables[tablename] = { columns: data.fields.map(f => f.name), rows: data.rows }
     }
     res.json(tables)
   } catch (err) {

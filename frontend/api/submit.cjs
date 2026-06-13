@@ -1,12 +1,10 @@
-import { getPool } from './_db.js'
-import { adaptTSQL } from './_translate.js'
-import questions from './questions.json' assert { type: 'json' }
+const { getPool } = require('./_db.cjs')
+const { adaptTSQL } = require('./_translate.cjs')
+const questions = require('./questions.json')
 
 const questionMap = Object.fromEntries(questions.map(q => [q.id, q]))
 
-function schemaName(id) {
-  return 'q_' + id.replace(/-/g, '_')
-}
+function schemaName(id) { return 'q_' + id.replace(/-/g, '_') }
 
 async function execQuery(questionId, sql, dialect) {
   const pgSql = dialect === 'mssql' ? adaptTSQL(sql) : sql
@@ -36,33 +34,26 @@ async function execQuery(questionId, sql, dialect) {
 function compareResults(a, b, orderMatters) {
   if (a.rows.length !== b.rows.length) return false
   if (a.columns.length !== b.columns.length) return false
-  const serialize = rows =>
-    rows.map(row => {
-      const norm = {}
-      Object.keys(row).sort().forEach(k => { norm[k] = row[k] === null ? '__NULL__' : String(row[k]) })
-      return JSON.stringify(norm)
-    })
-  const u = serialize(a.rows)
-  const r = serialize(b.rows)
+  const serialize = rows => rows.map(row => {
+    const norm = {}
+    Object.keys(row).sort().forEach(k => { norm[k] = row[k] === null ? '__NULL__' : String(row[k]) })
+    return JSON.stringify(norm)
+  })
+  const u = serialize(a.rows), r = serialize(b.rows)
   if (orderMatters) return u.every((row, i) => row === r[i])
   return [...u].sort().join('\n') === [...r].sort().join('\n')
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
   const { questionId, sql, dialect = 'sqlite' } = req.body
   if (!questionId || !sql) return res.status(400).json({ error: 'questionId and sql required' })
   const q = questionMap[questionId]
   if (!q) return res.status(404).json({ error: `Unknown question: ${questionId}` })
-
   const [userResult, refResult] = await Promise.all([
     execQuery(questionId, sql.trim(), dialect),
     execQuery(questionId, q.solution.trim(), 'sqlite'),
   ])
-
-  const correct = !userResult.error && !refResult.error
-    ? compareResults(userResult, refResult, q.order_matters)
-    : false
-
+  const correct = !userResult.error && !refResult.error ? compareResults(userResult, refResult, q.order_matters) : false
   res.json({ userResult, refResult, correct })
 }
