@@ -29,12 +29,14 @@ module.exports = async function handler(req, res) {
 
   try {
     const pool = await getPool()
+    const t0 = Date.now()
     const result = await pool.request().query(qualifiedSql)
+    const executionTime = Date.now() - t0
     const recordset = result.recordset || []
     const columns = recordset.length > 0 ? Object.keys(recordset[0]) : []
     const rows = recordset.map(r => { const o = {}; columns.forEach(c => { o[c] = r[c] === undefined ? null : r[c] }); return o })
-    res.json({ columns, rows, error: null })
+    res.json({ columns, rows, error: null, executionTime })
   } catch (err) {
-    res.json({ columns: [], rows: [], error: err.message })
+    res.json({ columns: [], rows: [], error: err.message, executionTime: null })
   }
 }

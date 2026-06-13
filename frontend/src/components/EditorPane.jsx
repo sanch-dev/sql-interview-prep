@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { getStats, getPlan } from '../lib/sql'
 import CodeMirror from '@uiw/react-codemirror'
 import { sql, MSSQL, SQLite } from '@codemirror/lang-sql'
 import { EditorView } from '@codemirror/view'
@@ -148,6 +149,8 @@ export default function EditorPane({ question, initialValue, results, refResult,
   const [dialectKey, setDialectKey] = useState('sqlite')
   const [resultsHeight, setResultsHeight] = useState(DEFAULT_RESULTS_H)
   const [lastRunCode, setLastRunCode] = useState(null)
+  const [queryStats, setQueryStats]  = useState(null)
+  const [queryPlan, setQueryPlan]    = useState(null)
   const isDark = theme === 'dark'
 
   const currentDialect = DIALECTS.find((d) => d.value === dialectKey) || DIALECTS[0]
@@ -209,8 +212,8 @@ export default function EditorPane({ question, initialValue, results, refResult,
     window.addEventListener('mouseup', onUp)
   }
 
-  const handleRun    = useCallback(() => { setLastRunCode(code); onRun(code, dialectKey) },    [code, onRun, dialectKey])
-  const handleSubmit = useCallback(() => { setLastRunCode(code); onSubmit(code, dialectKey) }, [code, onSubmit, dialectKey])
+  const handleRun    = useCallback(() => { setLastRunCode(code); setQueryStats(null); setQueryPlan(null); onRun(code, dialectKey) },    [code, onRun, dialectKey])
+  const handleSubmit = useCallback(() => { setLastRunCode(code); setQueryStats(null); setQueryPlan(null); onSubmit(code, dialectKey) }, [code, onSubmit, dialectKey])
 
   const runKeymap = Prec.highest(keymap.of([
     { key: 'Ctrl-Enter', run: () => { handleRun(); return true } },
@@ -265,7 +268,7 @@ export default function EditorPane({ question, initialValue, results, refResult,
 
       {dialectKey === 'mssql' && (
         <div className="tsql-notice">
-          T-SQL mode — <code>TOP N</code>, <code>ISNULL</code>, <code>LEN</code>, <code>GETDATE</code>, <code>CHARINDEX</code>, <code>DATEADD</code>, <code>DATEDIFF</code> translated server-side.
+          T-SQL mode — <code>TOP N</code>, <code>ISNULL</code>, <code>LEN</code>, <code>GETDATE</code>, <code>CHARINDEX</code>, <code>DATEADD</code>, <code>DATEDIFF</code> run natively on Azure SQL.
         </div>
       )}
 
@@ -300,6 +303,10 @@ export default function EditorPane({ question, initialValue, results, refResult,
         tableNames={tableNames}
         dialectKey={dialectKey}
         height={resultsHeight}
+        stats={queryStats}
+        plan={queryPlan}
+        onFetchStats={lastRunCode ? async () => { const s = await getStats(lastRunCode, question.id); setQueryStats(s) } : null}
+        onFetchPlan={lastRunCode ? async () => { const p = await getPlan(lastRunCode, question.id); setQueryPlan(p) } : null}
       />
 
       {lastRunCode && <MiniAnalysis sql={lastRunCode} />}

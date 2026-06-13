@@ -1206,6 +1206,73 @@ details[open] .details-summary::before { transform: rotate(90deg); }
   background: var(--bg-subtle);
 }
 
+/* --- Results tabs ------------------------------------------------- */
+.results-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-subtle);
+  flex-shrink: 0;
+}
+.results-tab {
+  padding: 5px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-2);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 0.15s;
+}
+.results-tab:hover { color: var(--text-1); }
+.results-tab-active { color: var(--accent) !important; border-bottom-color: var(--accent) !important; }
+.tab-time {
+  font-size: 11px;
+  color: var(--text-3);
+  background: var(--bg-2);
+  padding: 1px 5px;
+  border-radius: 3px;
+}
+
+/* --- Stats panel -------------------------------------------------- */
+.stats-panel { padding: 10px 16px; display: flex; flex-direction: column; gap: 4px; }
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 8px;
+  border-radius: 4px;
+  background: var(--bg-2);
+  font-size: 12.5px;
+}
+.stat-label { color: var(--text-2); }
+.stat-label.stat-table { font-family: monospace; }
+.stat-value { color: var(--text-1); font-weight: 600; font-variant-numeric: tabular-nums; }
+.stat-section-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-top: 8px;
+  margin-bottom: 2px;
+}
+
+/* --- Plan panel --------------------------------------------------- */
+.plan-panel { padding: 10px 12px; }
+.plan-text {
+  font-family: monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--text-1);
+  white-space: pre;
+  margin: 0;
+}
+
 /* --- Buttons ------------------------------------------------------ */
 .btn {
   display: inline-flex;
