@@ -1,122 +1,57 @@
 import { useMemo, useState } from 'react'
 import { useProgress } from '../contexts/ProgressContext'
-import { STAGES, getMastery, getNextUp, getStageStats } from '../lib/stages'
-import DonutRing from './DonutRing'
-
-function SidebarReadiness({ score, masteredCount, topWeakSpots }) {
-  const color = score >= 70 ? '#16a34a' : score >= 40 ? '#f59e0b' : '#3b82f6'
-  return (
-    <div className="sb-readiness">
-      <div className="sb-readiness-row">
-        <span className="sb-readiness-label">Readiness</span>
-        <span className="sb-readiness-score" style={{ color }}>{score}%</span>
-      </div>
-      <div className="sb-readiness-bar">
-        <div className="sb-readiness-fill" style={{ width: `${score}%`, background: color }} />
-      </div>
-      {masteredCount > 0 && (
-        <span className="sb-mastered-count">⭐ {masteredCount} mastered</span>
-      )}
-      {topWeakSpots.length > 0 && (
-        <div className="sb-weakspots">
-          {topWeakSpots.map(({ category }) => (
-            <span key={category} className="sb-weakspot-tag">⚠ {category}</span>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
+import { PATTERNS, computeAllPatternMastery, computeReadinessScore, LEVEL_CONFIG } from '../data/patterns'
 
 const DIFFICULTIES = ['All', 'Easy', 'Medium', 'Hard']
-const STATUSES = [
-  { value: 'All',       label: 'All status'    },
-  { value: 'solved',    label: '✓ Solved'       },
-  { value: 'attempted', label: '◐ Attempted'    },
-  { value: 'todo',      label: '○ Not started'  },
-]
 
-function StatusDot({ status }) {
-  if (status === 'solved')    return <span className="qdot qdot-solved">✓</span>
-  if (status === 'attempted') return <span className="qdot qdot-attempted">◐</span>
-  return <span className="qdot qdot-todo">○</span>
+function StatusDot({ status, mastered }) {
+  if (mastered) return <span className="qdot qdot-mastered" title="Mastered">★</span>
+  if (status === 'solved')    return <span className="qdot qdot-solved" title="Solved">✓</span>
+  if (status === 'attempted') return <span className="qdot qdot-attempted" title="Attempted">◐</span>
+  return <span className="qdot qdot-todo" title="Not started">○</span>
 }
 
-export default function Sidebar({ questions, selectedId, onSelect, mobileOpen, onMobileClose }) {
-  const { progress, reviewMarks, readinessScore, masteredCount, topWeakSpots } = useProgress()
-
+export default function Sidebar({ questions, selectedId, onSelect, mobileOpen, onMobileClose, onGoSimulator }) {
+  const { progress, mastery, reviewMarks } = useProgress()
   const [search,       setSearch]       = useState('')
   const [difficulty,   setDifficulty]   = useState('All')
-  const [statusFilter, setStatusFilter] = useState('All')
-  const [company,      setCompany]      = useState('All')
-  const [reviewMode,   setReviewMode]   = useState(false)
-  const [showFilters,  setShowFilters]  = useState(false)
-  const [openStages,   setOpenStages]   = useState(() => new Set(['foundations']))
-  const [openCats,     setOpenCats]     = useState(() => new Set())
+  const [openPatterns, setOpenPatterns] = useState(() => new Set())
 
-  const getStatus = (q) => progress[q.id]?.status || 'todo'
+  const patternMasteries = useMemo(
+    () => computeAllPatternMastery(questions, progress, mastery),
+    [questions, progress, mastery]
+  )
 
-  const isFiltering = search || difficulty !== 'All' || statusFilter !== 'All' || company !== 'All'
+  const readinessScore = useMemo(
+    () => computeReadinessScore(patternMasteries),
+    [patternMasteries]
+  )
 
-  const companies = useMemo(() => {
-    const all = new Set()
-    questions.forEach(q => (q.companies || []).forEach(c => all.add(c)))
-    return ['All', ...Array.from(all).sort()]
-  }, [questions])
+  const masteredCount = useMemo(
+    () => questions.filter(q => mastery[q.id]?.mastered).length,
+    [questions, mastery]
+  )
+
+  const scoreColor = readinessScore >= 70 ? '#16a34a' : readinessScore >= 40 ? '#f59e0b' : '#3b82f6'
+
+  // Show flat filtered list when search or difficulty filter is active
+  const showFlat = search.trim().length > 0 || difficulty !== 'All'
 
   const filtered = useMemo(() => {
-    if (!isFiltering && !reviewMode) return []
+    if (!showFlat) return []
     return questions.filter(q => {
       if (difficulty !== 'All' && q.difficulty !== difficulty) return false
-      const st = getStatus(q)
-      if (reviewMode) return st === 'attempted' || reviewMarks.has(q.id)
-      if (statusFilter !== 'All' && st !== statusFilter) return false
-      if (company !== 'All' && !(q.companies || []).includes(company)) return false
       if (search && !q.title.toLowerCase().includes(search.toLowerCase())) return false
       return true
     })
-  }, [questions, difficulty, statusFilter, company, reviewMode, search, progress, reviewMarks])
+  }, [questions, search, difficulty, showFlat])
 
-  const stageStats = useMemo(() => getStageStats(questions, progress), [questions, progress])
-
-  const catStats = useMemo(() => {
-    const map = {}
-    questions.forEach(q => {
-      if (!map[q.category]) map[q.category] = { total: 0, solved: 0 }
-      map[q.category].total++
-      if (getStatus(q) === 'solved') map[q.category].solved++
-    })
-    return map
-  }, [questions, progress])
-
-  const nextUp = useMemo(() => getNextUp(questions, progress), [questions, progress])
-
-  const reviewCount = useMemo(
-    () => questions.filter(q => getStatus(q) === 'attempted' || reviewMarks.has(q.id)).length,
-    [questions, progress, reviewMarks]
-  )
-
-  function toggleStage(id) {
-    setOpenStages(prev => {
+  function togglePattern(id) {
+    setOpenPatterns(prev => {
       const next = new Set(prev)
       next.has(id) ? next.delete(id) : next.add(id)
       return next
     })
-  }
-
-  function toggleCat(cat) {
-    setOpenCats(prev => {
-      const next = new Set(prev)
-      next.has(cat) ? next.delete(cat) : next.add(cat)
-      return next
-    })
-  }
-
-  function pickRandom() {
-    if (!questions.length) return
-    const q = questions[Math.floor(Math.random() * questions.length)]
-    onSelect(q)
-    onMobileClose?.()
   }
 
   function handleSelect(q) {
@@ -124,22 +59,37 @@ export default function Sidebar({ questions, selectedId, onSelect, mobileOpen, o
     onMobileClose?.()
   }
 
-  const showFlat = isFiltering || reviewMode
+  function pickRandom() {
+    if (!questions.length) return
+    const unmastered = questions.filter(q => !mastery[q.id]?.mastered)
+    const pool = unmastered.length > 0 ? unmastered : questions
+    handleSelect(pool[Math.floor(Math.random() * pool.length)])
+  }
+
+  function getStatus(q) {
+    return progress[q.id]?.status || 'todo'
+  }
 
   return (
     <>
       {mobileOpen && <div className="sidebar-backdrop" onClick={onMobileClose} />}
-
       <aside className={`sidebar ${mobileOpen ? 'sidebar-mobile-open' : ''}`}>
 
-        {/* ── Readiness score ─────────────────────────── */}
-        <SidebarReadiness
-          score={readinessScore}
-          masteredCount={masteredCount}
-          topWeakSpots={topWeakSpots}
-        />
+        {/* ── Readiness bar ─────────────────────────────────────── */}
+        <div className="sb-coach-bar">
+          <div className="sb-coach-bar-row">
+            <span className="sb-coach-label">Interview Readiness</span>
+            <span className="sb-coach-score" style={{ color: scoreColor }}>{readinessScore}%</span>
+          </div>
+          <div className="sb-coach-track">
+            <div className="sb-coach-fill" style={{ width: `${readinessScore}%`, background: scoreColor }} />
+          </div>
+          {masteredCount > 0 && (
+            <span className="sb-coach-mastered">⭐ {masteredCount} question{masteredCount !== 1 ? 's' : ''} mastered</span>
+          )}
+        </div>
 
-        {/* ── Search bar ──────────────────────────────── */}
+        {/* ── Search ────────────────────────────────────────────── */}
         <div className="sb-search-row">
           <div className="sb-search-wrap">
             <span className="sb-search-icon">🔍</span>
@@ -151,61 +101,36 @@ export default function Sidebar({ questions, selectedId, onSelect, mobileOpen, o
               onChange={e => setSearch(e.target.value)}
             />
           </div>
-          <button
-            className={`sb-filter-btn ${showFilters ? 'sb-filter-btn-active' : ''}`}
-            onClick={() => setShowFilters(v => !v)}
-            title="Filters"
-          >
-            ⚙
-          </button>
         </div>
 
-        {/* ── Filters (collapsible) ───────────────────── */}
-        {showFilters && (
-          <div className="sb-filters">
-            <div className="sb-chips">
-              {DIFFICULTIES.map(d => (
-                <button
-                  key={d}
-                  className={`chip ${difficulty === d ? 'chip-active' : ''} ${d !== 'All' ? `chip-${d.toLowerCase()}` : ''}`}
-                  onClick={() => setDifficulty(d)}
-                >{d}</button>
-              ))}
-            </div>
-            <div className="sb-selects">
-              <select className="filter-select" value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-                {STATUSES.map(s => <option key={s.value} value={s.value}>{s.label}</option>)}
-              </select>
-              <select className="filter-select" value={company} onChange={e => setCompany(e.target.value)}>
-                {companies.map(c => <option key={c} value={c}>{c === 'All' ? 'All companies' : c}</option>)}
-              </select>
-            </div>
-          </div>
-        )}
+        {/* ── Difficulty chips ──────────────────────────────────── */}
+        <div className="sb-diff-chips">
+          {DIFFICULTIES.map(d => (
+            <button
+              key={d}
+              className={`chip chip-sm ${difficulty === d ? 'chip-active' : ''} ${d !== 'All' ? `chip-${d.toLowerCase()}` : ''}`}
+              onClick={() => setDifficulty(d)}
+            >{d}</button>
+          ))}
+        </div>
 
-        {/* ── Body ────────────────────────────────────── */}
+        {/* ── Body ──────────────────────────────────────────────── */}
         <div className="sb-body">
 
           {showFlat ? (
-            /* ── Flat filtered list ─────────────────── */
             <div className="sb-flat">
-              {reviewMode && (
-                <div className="sb-banner">📚 Review — {filtered.length} to revisit</div>
-              )}
               {filtered.length === 0 ? (
-                <p className="sb-empty">
-                  {reviewMode ? 'Nothing to review — keep practicing!' : 'No questions match.'}
-                </p>
+                <p className="sb-empty">No questions match.</p>
               ) : filtered.map(q => {
-                const st = getStatus(q)
+                const st  = getStatus(q)
+                const isM = mastery[q.id]?.mastered
                 return (
                   <button
                     key={q.id}
-                    className={`qrow ${selectedId === q.id ? 'qrow-active' : ''} ${st === 'solved' ? 'qrow-solved' : ''}`}
-                    data-diff={q.difficulty.toLowerCase()}
+                    className={`qrow ${selectedId === q.id ? 'qrow-active' : ''}`}
                     onClick={() => handleSelect(q)}
                   >
-                    <StatusDot status={st} />
+                    <StatusDot status={st} mastered={isM} />
                     <span className="qrow-title">{q.title}</span>
                     {reviewMarks.has(q.id) && <span className="q-bookmark">🔖</span>}
                     <span className={`badge badge-${q.difficulty.toLowerCase()}`}>{q.difficulty}</span>
@@ -214,119 +139,80 @@ export default function Sidebar({ questions, selectedId, onSelect, mobileOpen, o
               })}
             </div>
           ) : (
-            /* ── Learning Path ──────────────────────── */
-            <div className="learning-path">
+            <div className="sb-pattern-list">
+              <div className="sb-section-label">INTERVIEW PATTERNS</div>
 
-              {/* Next Up card */}
-              {nextUp && (
-                <div className="lp-section">
-                  <span className="lp-label">Next Up</span>
-                  <button className="next-up-card" onClick={() => handleSelect(nextUp.question)}>
-                    <div className="nuc-body">
-                      <span className="nuc-stage">
-                        {nextUp.stage.emoji} {nextUp.stage.label} · {nextUp.category}
-                      </span>
-                      <span className="nuc-title">{nextUp.question.title}</span>
-                      <span className={`badge badge-${nextUp.question.difficulty.toLowerCase()}`}>
-                        {nextUp.question.difficulty}
-                      </span>
-                    </div>
-                    <span className="nuc-arrow">→</span>
-                  </button>
-                </div>
-              )}
+              {PATTERNS.map(pattern => {
+                const pm      = patternMasteries[pattern.id]
+                const lc      = LEVEL_CONFIG[pm.level]
+                const isOpen  = openPatterns.has(pattern.id)
+                const patternQs = questions.filter(q => pattern.questionIds.includes(q.id))
 
-              {/* Stages */}
-              <div className="lp-section">
-                <span className="lp-label">Learning Path</span>
-
-                {STAGES.map((stage, stageIdx) => {
-                  const stats    = stageStats[stage.id]
-                  const isOpen   = openStages.has(stage.id)
-                  const stagePct = stats.total ? Math.round((stats.solved / stats.total) * 100) : 0
-
-                  return (
-                    <div key={stage.id} className="stage-group">
-                      <button
-                        className={`stage-header ${isOpen ? 'stage-header-open' : ''}`}
-                        onClick={() => toggleStage(stage.id)}
-                      >
-                        <DonutRing solved={stats.solved} total={stats.total} size={30} color={stage.color} />
-                        <div className="stage-info">
-                          <span className="stage-name">{stage.emoji} {stage.label}</span>
-                          <span className="stage-meta">{stagePct}% · {stats.solved}/{stats.total}</span>
+                return (
+                  <div key={pattern.id} className="sb-pattern-group">
+                    <button
+                      className={`sb-pattern-header ${isOpen ? 'sb-pattern-header-open' : ''}`}
+                      onClick={() => togglePattern(pattern.id)}
+                    >
+                      <span className="sb-p-icon" style={{ color: pattern.color }}>{pattern.icon}</span>
+                      <div className="sb-p-info">
+                        <span className="sb-p-name">{pattern.name}</span>
+                        <div className="sb-p-bar">
+                          <div
+                            className="sb-p-bar-fill"
+                            style={{ width: `${pm.masteryPct}%`, background: pattern.color }}
+                          />
                         </div>
-                        <span className="stage-chevron">{isOpen ? '▾' : '▸'}</span>
-                      </button>
+                      </div>
+                      <span className="sb-p-level" style={{ color: lc.color }} title={lc.label}>
+                        {lc.icon}
+                      </span>
+                      <span className="sb-p-count">{pm.masteredCount}/{pm.totalCount}</span>
+                      <span className="sb-p-chev">{isOpen ? '▾' : '▸'}</span>
+                    </button>
 
-                      {isOpen && (
-                        <div className="stage-cats">
-                          {stage.categories.map(catName => {
-                            const catQs   = questions.filter(q => q.category === catName)
-                            if (!catQs.length) return null
-                            const cStats  = catStats[catName] || { total: 0, solved: 0 }
-                            const cMast   = getMastery(cStats.solved, cStats.total)
-                            const isCatOpen = openCats.has(catName)
-
-                            return (
-                              <div key={catName} className="cat-block">
-                                <button
-                                  className={`cat-row ${isCatOpen ? 'cat-row-open' : ''}`}
-                                  onClick={() => toggleCat(catName)}
-                                >
-                                  <span className={`mastery-icon ${cMast.cls}`} title={cMast.label}>
-                                    {cMast.icon}
-                                  </span>
-                                  <span className="cat-row-name">{catName}</span>
-                                  <span className="cat-row-frac">{cStats.solved}/{cStats.total}</span>
-                                  <span className="cat-row-chev">{isCatOpen ? '▾' : '▸'}</span>
-                                </button>
-
-                                {isCatOpen && (
-                                  <div className="cat-questions">
-                                    {catQs.map(q => {
-                                      const st = getStatus(q)
-                                      return (
-                                        <button
-                                          key={q.id}
-                                          className={`qrow qrow-nested ${selectedId === q.id ? 'qrow-active' : ''} ${st === 'solved' ? 'qrow-solved' : ''}`}
-                                          data-diff={q.difficulty.toLowerCase()}
-                                          onClick={() => handleSelect(q)}
-                                        >
-                                          <StatusDot status={st} />
-                                          <span className="qrow-title">{q.title}</span>
-                                          {reviewMarks.has(q.id) && <span className="q-bookmark">🔖</span>}
-                                          <span className={`badge badge-${q.difficulty.toLowerCase()}`}>
-                                            {q.difficulty}
-                                          </span>
-                                        </button>
-                                      )
-                                    })}
-                                  </div>
-                                )}
-                              </div>
-                            )
-                          })}
+                    {isOpen && (
+                      <div className="sb-pattern-questions">
+                        <div className="sb-p-level-row">
+                          <span className="sb-p-level-badge" style={{ color: lc.color }}>
+                            {lc.icon} {lc.label}
+                          </span>
+                          {pm.nextAction && (
+                            <span className="sb-p-next-action">{pm.nextAction}</span>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+                        {patternQs.map(q => {
+                          const st  = getStatus(q)
+                          const isM = mastery[q.id]?.mastered
+                          return (
+                            <button
+                              key={q.id}
+                              className={`qrow qrow-nested ${selectedId === q.id ? 'qrow-active' : ''}`}
+                              onClick={() => handleSelect(q)}
+                            >
+                              <StatusDot status={st} mastered={isM} />
+                              <span className="qrow-title">{q.title}</span>
+                              {reviewMarks.has(q.id) && <span className="q-bookmark">🔖</span>}
+                              <span className={`badge badge-${q.difficulty.toLowerCase()}`}>{q.difficulty}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           )}
         </div>
 
-        {/* ── Footer actions ──────────────────────────── */}
+        {/* ── Footer ────────────────────────────────────────────── */}
         <div className="sb-footer">
-          <button
-            className={`btn btn-sm w-full ${reviewMode ? 'btn-primary' : 'btn-ghost'}`}
-            onClick={() => setReviewMode(v => !v)}
-          >
-            📚 Review{reviewCount > 0 ? ` (${reviewCount})` : ''}
+          <button className="btn btn-ghost btn-sm w-full" onClick={onGoSimulator}>
+            🎯 Interview Simulator
           </button>
           <button className="btn btn-ghost btn-sm w-full" onClick={pickRandom}>
-            🎲 Random
+            🎲 Random from weak patterns
           </button>
         </div>
       </aside>

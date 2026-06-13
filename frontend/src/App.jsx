@@ -61,6 +61,7 @@ function AppContent() {
             onSelect={setSelected}
             mobileOpen={sidebarOpen}
             onMobileClose={() => setSidebarOpen(false)}
+            onGoSimulator={() => { setCurrentPage('simulator'); setSelected(null) }}
           />
           <main className="main">
             {selected ? (

@@ -4,6 +4,8 @@ import CodeMirror from '@uiw/react-codemirror'
 import { sql } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
 import CoachingBanner from './CoachingBanner'
+import { COACHING } from '../data/coaching'
+import { getPatternForQuestion } from '../data/patterns'
 
 const NOTES_KEY = 'sqlforge_notes'
 
@@ -145,10 +147,30 @@ function ConceptPanel({ category }) {
   return (
     <div className="concept-panel">
       <button className="concept-panel-toggle" onClick={() => setOpen(o => !o)}>
-        <span>💡 Key Concept: {concept.title}</span>
+        <span>💡 SQL Reference: {concept.title}</span>
         <span>{open ? '▲' : '▼'}</span>
       </button>
       {open && <pre className="concept-panel-body">{concept.body}</pre>}
+    </div>
+  )
+}
+
+function DEContextPanel({ questionId }) {
+  const coaching = COACHING[questionId]
+  const pattern  = getPatternForQuestion(questionId)
+  if (!coaching || !pattern) return null
+
+  return (
+    <div className="de-context-panel">
+      <div className="de-context-header">
+        <div className="de-context-badges">
+          <span className="de-pattern-badge" style={{ color: pattern.color, borderColor: pattern.color }}>
+            {pattern.icon} {pattern.name}
+          </span>
+          <span className="de-freq-badge">{pattern.interviewFreq}% of DE interviews</span>
+        </div>
+      </div>
+      <p className="de-context-text">{coaching.deContext}</p>
     </div>
   )
 }
@@ -209,6 +231,8 @@ export default function ProblemPane({ question, theme, sampleTables = {}, onHint
           </div>
         )}
       </div>
+
+      <DEContextPanel questionId={question.id} />
 
       <div
         className="problem-description"
