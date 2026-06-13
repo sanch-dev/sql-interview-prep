@@ -142,20 +142,8 @@ function formatTime(s) {
   return `${m}:${sec.toString().padStart(2, '0')}`
 }
 
-function adaptTSQLToSQLite(sqlText) {
-  let out = sqlText
-  out = out.replace(/\bWITH\s*\(\s*(?:NO(?:LOCK|EXPAND)|READ(?:UNCOMMITTED|COMMITTED|PAST)|UPDLOCK|ROWLOCK|TABLOCK|TABLOCKX|HOLDLOCK|XLOCK|PAGLOCK|NOWAIT)\s*\)/gi, '')
-  let topN = null
-  out = out.replace(/\bSELECT\s+TOP\s+\(?\s*(\d+)\s*\)?\s+/gi, (_, n) => { topN = n; return 'SELECT ' })
-  if (topN !== null) out = out.replace(/\bLIMIT\s+\d+\s*$/i, '').trimEnd() + ` LIMIT ${topN}`
-  out = out.replace(/\bISNULL\s*\(/gi, 'COALESCE(')
-  out = out.replace(/\bLEN\s*\(/gi, 'LENGTH(')
-  out = out.replace(/\bGET(?:UTC)?DATE\s*\(\s*\)/gi, "DATE('now')")
-  out = out.replace(/\bCHARINDEX\s*\(\s*([^,]+),\s*([^)]+)\)/gi, (_, needle, haystack) => `INSTR(${haystack.trim()}, ${needle.trim()})`)
-  return out
-}
 
-export default function EditorPane({ question, initialValue, results, refResult, isRunning, sampleTables = {}, onRun, onSubmit, onSave, theme }) {
+export default function EditorPane({ question, initialValue, results, refResult, isRunning, sampleTables = {}, onRun, onSubmit, onSave, onDialectChange, theme }) {
   const [code, setCode]             = useState(initialValue || '')
   const [dialectKey, setDialectKey] = useState('sqlite')
   const [resultsHeight, setResultsHeight] = useState(DEFAULT_RESULTS_H)
@@ -221,10 +209,8 @@ export default function EditorPane({ question, initialValue, results, refResult,
     window.addEventListener('mouseup', onUp)
   }
 
-  function prepare(raw) { return dialectKey === 'mssql' ? adaptTSQLToSQLite(raw) : raw }
-
-  const handleRun    = useCallback(() => { setLastRunCode(code); onRun(prepare(code)) },    [code, onRun, dialectKey])
-  const handleSubmit = useCallback(() => { setLastRunCode(code); onSubmit(prepare(code)) }, [code, onSubmit, dialectKey])
+  const handleRun    = useCallback(() => { setLastRunCode(code); onRun(code, dialectKey) },    [code, onRun, dialectKey])
+  const handleSubmit = useCallback(() => { setLastRunCode(code); onSubmit(code, dialectKey) }, [code, onSubmit, dialectKey])
 
   const runKeymap = Prec.highest(keymap.of([
     { key: 'Ctrl-Enter', run: () => { handleRun(); return true } },
@@ -252,8 +238,8 @@ export default function EditorPane({ question, initialValue, results, refResult,
               <button
                 key={d.value}
                 className={`dialect-tab${dialectKey === d.value ? ' dialect-tab-active' : ''}`}
-                onClick={() => setDialectKey(d.value)}
-                title={d.value === 'mssql' ? 'T-SQL mode — common syntax auto-adapted for SQLite execution' : 'Standard SQLite mode'}
+                onClick={() => { setDialectKey(d.value); onDialectChange?.(d.value) }}
+                title={d.value === 'mssql' ? 'T-SQL mode — syntax translated server-side to PostgreSQL' : 'Standard SQL mode'}
               >
                 {d.label}
               </button>
@@ -279,7 +265,7 @@ export default function EditorPane({ question, initialValue, results, refResult,
 
       {dialectKey === 'mssql' && (
         <div className="tsql-notice">
-          T-SQL mode — <code>WITH(NOLOCK)</code>, <code>TOP N</code>, <code>ISNULL</code>, <code>LEN</code>, <code>GETDATE</code>, <code>CHARINDEX</code> auto-adapted for SQLite.
+          T-SQL mode — <code>TOP N</code>, <code>ISNULL</code>, <code>LEN</code>, <code>GETDATE</code>, <code>CHARINDEX</code>, <code>DATEADD</code>, <code>DATEDIFF</code> translated server-side.
         </div>
       )}
 

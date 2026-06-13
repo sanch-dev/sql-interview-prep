@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useProgress } from '../contexts/ProgressContext'
-import { compareResults, executeSQL, getTableData } from '../lib/sql'
+import { executeSQL, submitSQL, getTableData } from '../lib/sql'
 import EditorPane from './EditorPane'
 import ProblemPane from './ProblemPane'
 
@@ -34,23 +34,20 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
 
   useEffect(() => {
     setSampleTables({})
-    getTableData(question.schema).then(setSampleTables)
-  }, [question.id, question.schema])
+    getTableData(question.id).then(setSampleTables)
+  }, [question.id])
 
-  const handleRun = useCallback(async (sql) => {
+  const handleRun = useCallback(async (sql, dialect = 'sqlite') => {
     setIsRunning(true)
     setRefResult(null)
-    const result = await executeSQL(sql, question.schema)
+    const result = await executeSQL(sql, question.id, dialect)
     setResults({ ...result, type: 'run' })
     setIsRunning(false)
-  }, [question])
+  }, [question.id])
 
-  const handleSubmit = useCallback(async (sql) => {
+  const handleSubmit = useCallback(async (sql, dialect = 'sqlite') => {
     setIsRunning(true)
-    const [userResult, ref] = await Promise.all([
-      executeSQL(sql, question.schema),
-      executeSQL(question.solution, question.schema),
-    ])
+    const { userResult, refResult: ref, correct } = await submitSQL(sql, question.id, dialect)
 
     if (userResult.error) {
       setResults({ ...userResult, type: 'submit' })
@@ -59,14 +56,13 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
       return
     }
 
-    const correct = compareResults(userResult, ref, question.order_matters)
     setResults({ ...userResult, type: 'submit', correct })
     setRefResult(ref)
 
     const status = correct ? 'solved' : 'attempted'
     updateProgress(question.id, { status, solution: sql })
     setIsRunning(false)
-  }, [question, updateProgress])
+  }, [question.id, updateProgress])
 
   const handleSave = useCallback((code) => {
     writeDraft(question.id, code)

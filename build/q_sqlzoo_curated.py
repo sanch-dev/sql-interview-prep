@@ -23,9 +23,9 @@ Return country name and area.</p>
 CREATE TABLE world (
     name       TEXT PRIMARY KEY,
     continent  TEXT,
-    area       INTEGER,
-    population INTEGER,
-    gdp        INTEGER
+    area       BIGINT,
+    population BIGINT,
+    gdp        BIGINT
 );
 INSERT INTO world VALUES
  ('Afghanistan', 'Asia', 652230, 25500100, NULL),

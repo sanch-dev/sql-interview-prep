@@ -80,6 +80,16 @@ def main():
         frontend_out.write_text(content, encoding="utf-8")
         print(f"  also wrote {frontend_out}")
 
+    # Emit api/questions.json for the backend server
+    api_out = Path(__file__).parent.parent / "api" / "questions.json"
+    api_payload = [
+        {"id": q["id"], "schema": q["schema"], "solution": q["solution"], "order_matters": q.get("order_matters", False)}
+        for q in ALL
+    ]
+    api_out.parent.mkdir(parents=True, exist_ok=True)
+    api_out.write_text(json.dumps(api_payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(f"  also wrote {api_out}")
+
     counts = {}
     for q in ALL:
         counts[q["difficulty"]] = counts.get(q["difficulty"], 0) + 1

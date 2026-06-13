@@ -6,7 +6,7 @@ import { oneDark } from '@codemirror/theme-one-dark'
 import { autocompletion } from '@codemirror/autocomplete'
 import { Prec } from '@codemirror/state'
 import { keymap } from '@codemirror/view'
-import { executeSQL, compareResults } from '../lib/sql'
+import { executeSQL, submitSQL } from '../lib/sql'
 
 const SQL_EXT = [sql({ dialect: SQLite }), EditorView.lineWrapping,
   autocompletion({ activateOnTyping: false })]
@@ -135,7 +135,7 @@ export default function DebugPage({ questions: rawQuestions, theme }) {
     setIsRunning('run')
     setIsCorrect(null)
     setRefResult(null)
-    const r = await executeSQL(code, selected.schema)
+    const r = await executeSQL(code, selected.id)
     setResult({ ...r, type: 'run' })
     setIsRunning(null)
   }
@@ -143,10 +143,7 @@ export default function DebugPage({ questions: rawQuestions, theme }) {
   async function handleSubmit() {
     if (isRunning) return
     setIsRunning('submit')
-    const [userRes, ref] = await Promise.all([
-      executeSQL(code, selected.schema),
-      executeSQL(selected.solution, selected.schema),
-    ])
+    const { userResult: userRes, refResult: ref, correct } = await submitSQL(code, selected.id)
     setRefResult(ref)
     if (userRes.error) {
       setResult({ ...userRes, type: 'submit' })
@@ -154,7 +151,6 @@ export default function DebugPage({ questions: rawQuestions, theme }) {
       setIsRunning(null)
       return
     }
-    const correct = compareResults(userRes, ref, selected.order_matters)
     setResult({ ...userRes, type: 'submit' })
     setIsCorrect(correct)
     if (correct) {

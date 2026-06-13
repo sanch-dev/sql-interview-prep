@@ -1,63 +1,37 @@
-let sqlJsInstance = null
+const API = import.meta.env.VITE_API_URL || 'http://localhost:3001'
 
-async function getSqlJs() {
-  if (sqlJsInstance) return sqlJsInstance
-  sqlJsInstance = await window.initSqlJs({
-    locateFile: (file) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`,
-  })
-  return sqlJsInstance
-}
-
-export async function executeSQL(sql, schema) {
-  let db = null
+export async function executeSQL(sql, questionId, dialect = 'sqlite') {
   try {
-    const SQL = await getSqlJs()
-    db = new SQL.Database()
-    db.run(schema)
-  } catch (e) {
-    db?.close()
-    return { error: 'Schema error: ' + e.message, columns: [], rows: [] }
-  }
-
-  try {
-    const stmt = db.prepare(sql)
-    const columns = stmt.getColumnNames()
-    const rows = []
-    while (stmt.step()) rows.push(stmt.getAsObject())
-    stmt.free()
-    db.close()
-    return { columns, rows, error: null }
-  } catch (e) {
-    db.close()
-    return { error: 'SQL Error: ' + e.message, columns: [], rows: [] }
+    const res = await fetch(`${API}/api/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sql, questionId, dialect }),
+    })
+    return await res.json()
+  } catch (err) {
+    return { columns: [], rows: [], error: `Network error: ${err.message}` }
   }
 }
 
-export async function getTableData(schema) {
-  let db = null
+export async function submitSQL(sql, questionId, dialect = 'sqlite') {
   try {
-    const SQL = await getSqlJs()
-    db = new SQL.Database()
-    db.run(schema)
+    const res = await fetch(`${API}/api/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sql, questionId, dialect }),
+    })
+    return await res.json() // { userResult, refResult, correct }
+  } catch (err) {
+    const errResult = { columns: [], rows: [], error: `Network error: ${err.message}` }
+    return { userResult: errResult, refResult: null, correct: false }
+  }
+}
 
-    const nameStmt = db.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY rowid")
-    const tableNames = []
-    while (nameStmt.step()) tableNames.push(nameStmt.getAsObject().name)
-    nameStmt.free()
-
-    const tables = {}
-    for (const name of tableNames) {
-      const stmt = db.prepare(`SELECT * FROM "${name}"`)
-      const columns = stmt.getColumnNames()
-      const rows = []
-      while (stmt.step()) rows.push(stmt.getAsObject())
-      stmt.free()
-      tables[name] = { columns, rows }
-    }
-    db.close()
-    return tables
+export async function getTableData(questionId) {
+  try {
+    const res = await fetch(`${API}/api/questions/${questionId}/tables`)
+    return await res.json()
   } catch {
-    db?.close()
     return {}
   }
 }
@@ -70,12 +44,10 @@ export function compareResults(userResult, refResult, orderMatters = false) {
   const serialize = (rows) =>
     rows.map((row) => {
       const normalized = {}
-      Object.keys(row)
-        .sort()
-        .forEach((k) => {
-          const v = row[k]
-          normalized[k] = v === null ? '__NULL__' : String(v)
-        })
+      Object.keys(row).sort().forEach((k) => {
+        const v = row[k]
+        normalized[k] = v === null ? '__NULL__' : String(v)
+      })
       return JSON.stringify(normalized)
     })
 
