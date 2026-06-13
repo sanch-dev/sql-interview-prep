@@ -8,7 +8,6 @@ const NAV_TABS = [
   { id: 'concepts',   label: 'Concepts',   icon: '📚' },
   { id: 'simulator',  label: 'Simulator',  icon: '🎯' },
   { id: 'analyzer',   label: 'Analyzer',   icon: '⚡' },
-  { id: 'debug',      label: 'Debug Lab',  icon: '🔍' },
   { id: 'schema',     label: 'Schema',     icon: '🗄' },
 ]
 
