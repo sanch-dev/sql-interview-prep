@@ -4109,3 +4109,35 @@ tr.diff-row-match td { background: var(--success-bg) !important; }
   flex-shrink: 0;
   font-style: normal;
 }
+
+/* ── T-SQL dialect badge (replaces SQLite/T-SQL tabs) ───────── */
+.dialect-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #6366f1;
+  background: #eef2ff;
+  border: 1px solid #c7d2fe;
+  border-radius: 4px;
+  padding: 0.15rem 0.45rem;
+}
+[data-theme="dark"] .dialect-badge {
+  background: rgba(99,102,241,0.15);
+  border-color: rgba(99,102,241,0.3);
+  color: #a5b4fc;
+}
+
+/* ── Expected output section (always visible after correct) ─── */
+.expected-section {
+  border-top: 1px solid var(--border);
+  padding-top: 0.5rem;
+  margin-top: 0.5rem;
+}
+.expected-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 0 0 0.4rem;
+}

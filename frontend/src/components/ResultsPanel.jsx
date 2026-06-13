@@ -199,10 +199,10 @@ export default function ResultsPanel({ result, refResult, isRunning, tableNames 
             </>
           )}
           {showExpected && (
-            <details className="expected-details">
-              <summary className="expected-summary">Expected output</summary>
+            <div className="expected-section">
+              <div className="expected-label">Expected output</div>
               <ResultTable columns={refResult.columns} rows={refResult.rows} />
-            </details>
+            </div>
           )}
         </div>
       )}

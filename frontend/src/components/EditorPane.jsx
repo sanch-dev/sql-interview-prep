@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import CodeMirror from '@uiw/react-codemirror'
-import { sql, MSSQL, SQLite } from '@codemirror/lang-sql'
+import CodeMirror, { useCodeMirror } from '@uiw/react-codemirror'
+import { sql, MSSQL } from '@codemirror/lang-sql'
 import { EditorView } from '@codemirror/view'
 import { oneDark } from '@codemirror/theme-one-dark'
 import { keymap } from '@codemirror/view'
 import { Prec } from '@codemirror/state'
 import { autocompletion } from '@codemirror/autocomplete'
+import { toggleLineComment } from '@codemirror/commands'
 import ResultsPanel from './ResultsPanel'
 import PatternDebrief from './PatternDebrief'
 
@@ -132,10 +133,8 @@ const MIN_RESULTS_H = 140
 const MAX_RESULTS_H = 560
 const DEFAULT_RESULTS_H = 220
 
-const DIALECTS = [
-  { value: 'sqlite', label: 'SQLite', dialect: SQLite },
-  { value: 'mssql',  label: 'T-SQL',  dialect: MSSQL  },
-]
+// Only T-SQL mode — SQLite tab removed
+const DIALECT_KEY = 'mssql'
 
 function formatTime(s) {
   const m = Math.floor(s / 60)
@@ -146,12 +145,11 @@ function formatTime(s) {
 
 export default function EditorPane({ question, initialValue, results, refResult, isRunning, sampleTables = {}, onRun, onSubmit, onSave, onDialectChange, showDebrief, justMastered, onDismissDebrief, theme }) {
   const [code, setCode]             = useState(initialValue || '')
-  const [dialectKey, setDialectKey] = useState('sqlite')
   const [resultsHeight, setResultsHeight] = useState(DEFAULT_RESULTS_H)
   const [lastRunCode, setLastRunCode] = useState(null)
   const isDark = theme === 'dark'
+  const editorViewRef = useRef(null)
 
-  const currentDialect = DIALECTS.find((d) => d.value === dialectKey) || DIALECTS[0]
   const tableNames = useMemo(() => Object.keys(sampleTables), [sampleTables])
 
   const cmSchema = useMemo(() => {
@@ -162,9 +160,8 @@ export default function EditorPane({ question, initialValue, results, refResult,
 
   // Refs so the stable completion extension always reads current values
   const schemaRef  = useRef({})
-  const dialectRef = useRef('sqlite')
-  useEffect(() => { schemaRef.current  = cmSchema    }, [cmSchema])
-  useEffect(() => { dialectRef.current = dialectKey  }, [dialectKey])
+  const dialectRef = useRef(DIALECT_KEY)
+  useEffect(() => { schemaRef.current = cmSchema }, [cmSchema])
 
   // Stable custom completion — built once, reads from refs (no remount needed)
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -210,12 +207,21 @@ export default function EditorPane({ question, initialValue, results, refResult,
     window.addEventListener('mouseup', onUp)
   }
 
-  const handleRun    = useCallback(() => { setLastRunCode(code); onRun(code, dialectKey) },    [code, onRun, dialectKey])
-  const handleSubmit = useCallback(() => { setLastRunCode(code); onSubmit(code, dialectKey) }, [code, onSubmit, dialectKey])
+  const handleRun    = useCallback(() => { setLastRunCode(code); onRun(code, DIALECT_KEY) },    [code, onRun])
+  const handleSubmit = useCallback(() => { setLastRunCode(code); onSubmit(code, DIALECT_KEY) }, [code, onSubmit])
+
+  function handleCommentLine() {
+    if (editorViewRef.current) {
+      toggleLineComment(editorViewRef.current)
+      editorViewRef.current.focus()
+    }
+  }
 
   const runKeymap = Prec.highest(keymap.of([
     { key: 'Ctrl-Enter', run: () => { handleRun(); return true } },
     { key: 'Mod-Enter',  run: () => { handleRun(); return true } },
+    { key: 'Ctrl-/',     run: (view) => { toggleLineComment(view); return true } },
+    { key: 'Mod-/',      run: (view) => { toggleLineComment(view); return true } },
   ]))
 
   useEffect(() => {
@@ -223,29 +229,14 @@ export default function EditorPane({ question, initialValue, results, refResult,
     return () => clearTimeout(t)
   }, [code, onSave])
 
-  // sql() for syntax highlighting only — no schema (avoids cache-at-mount timing bug)
-  const sqlLang = useMemo(
-    () => sql({ dialect: currentDialect.dialect }),
-    [currentDialect.dialect]
-  )
+  const sqlLang = useMemo(() => sql({ dialect: MSSQL }), [])
 
   return (
     <div className="editor-pane">
       <div className="editor-header">
         <div className="editor-header-left">
           <span className="editor-label">SQL Editor</span>
-          <div className="dialect-tabs">
-            {DIALECTS.map((d) => (
-              <button
-                key={d.value}
-                className={`dialect-tab${dialectKey === d.value ? ' dialect-tab-active' : ''}`}
-                onClick={() => { setDialectKey(d.value); onDialectChange?.(d.value) }}
-                title={d.value === 'mssql' ? 'T-SQL mode — syntax translated server-side to PostgreSQL' : 'Standard SQL mode'}
-              >
-                {d.label}
-              </button>
-            ))}
-          </div>
+          <span className="dialect-badge">T-SQL</span>
         </div>
         <div className="editor-actions">
           {secondsLeft !== null ? (
@@ -258,17 +249,22 @@ export default function EditorPane({ question, initialValue, results, refResult,
               ⏱ Timer
             </button>
           )}
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={handleCommentLine}
+            title="Toggle comment on current line (Ctrl+/)"
+          >
+            -- Comment
+          </button>
           <kbd className="shortcut-hint">Ctrl+Enter to run</kbd>
           <button className="btn btn-outline btn-sm" onClick={handleRun} disabled={isRunning}>▶ Run</button>
           <button className="btn btn-primary btn-sm" onClick={handleSubmit} disabled={isRunning}>✓ Submit</button>
         </div>
       </div>
 
-      {dialectKey === 'mssql' && (
-        <div className="tsql-notice">
-          T-SQL mode — <code>TOP N</code>, <code>ISNULL</code>, <code>LEN</code>, <code>GETDATE</code>, <code>CHARINDEX</code>, <code>DATEADD</code>, <code>DATEDIFF</code> run natively on Azure SQL.
-        </div>
-      )}
+      <div className="tsql-notice">
+        T-SQL mode — <code>TOP N</code>, <code>ISNULL</code>, <code>LEN</code>, <code>GETDATE</code>, <code>CHARINDEX</code>, <code>DATEADD</code>, <code>DATEDIFF</code> run natively on Azure SQL.
+      </div>
 
       {timerExpired && (
         <div className="timer-expired-banner">
@@ -286,9 +282,10 @@ export default function EditorPane({ question, initialValue, results, refResult,
             lineNumbers: true,
             highlightActiveLine: true,
             foldGutter: false,
-            autocompletion: false, // customCompletion extension handles this
+            autocompletion: false,
           }}
           className="sql-editor"
+          onCreateEditor={(view) => { editorViewRef.current = view }}
         />
       </div>
 
@@ -299,7 +296,7 @@ export default function EditorPane({ question, initialValue, results, refResult,
         refResult={refResult}
         isRunning={isRunning}
         tableNames={tableNames}
-        dialectKey={dialectKey}
+        dialectKey={DIALECT_KEY}
         height={resultsHeight}
       />
 
