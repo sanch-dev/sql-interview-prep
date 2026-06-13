@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useProgress } from '../contexts/ProgressContext'
-import { STAGES, getNextUp, getStageStats, isStageUnlocked } from '../lib/stages'
+import { STAGES, getNextUp, getStageStats } from '../lib/stages'
 import DonutRing from './DonutRing'
 
 const DAILY_GOAL = 3
@@ -20,7 +20,6 @@ export default function Welcome({ questions, onSelect }) {
 
   const nextUp     = useMemo(() => getNextUp(questions, progress), [questions, progress])
   const stageStats = useMemo(() => getStageStats(questions, progress), [questions, progress])
-
   const overallPct = total ? Math.round((solvedCount / total) * 100) : 0
 
   return (
@@ -89,25 +88,23 @@ export default function Welcome({ questions, onSelect }) {
       <section className="wh-stages">
         <h2 className="wh-section-title">Your Learning Path</h2>
         <div className="wh-stage-grid">
-          {STAGES.map((stage, idx) => {
-            const st       = stageStats[stage.id]
-            const unlocked = isStageUnlocked(idx, stageStats)
-            const pct      = st.total ? Math.round((st.solved / st.total) * 100) : 0
-            const done     = st.solved === st.total && st.total > 0
+          {STAGES.map((stage) => {
+            const st   = stageStats[stage.id]
+            const pct  = st.total ? Math.round((st.solved / st.total) * 100) : 0
+            const done = st.solved === st.total && st.total > 0
 
             return (
               <div
                 key={stage.id}
-                className={`wh-stage-card ${!unlocked ? 'wh-stage-locked' : ''} ${done ? 'wh-stage-done' : ''}`}
+                className={`wh-stage-card ${done ? 'wh-stage-done' : ''}`}
               >
                 <div className="wh-stage-ring">
                   <DonutRing solved={st.solved} total={st.total} size={48} color={stage.color} />
-                  {!unlocked && <span className="wh-stage-lock">🔒</span>}
                   {done && <span className="wh-stage-check">✓</span>}
                 </div>
                 <span className="wh-stage-name">{stage.emoji} {stage.label}</span>
                 <span className="wh-stage-desc">{stage.description}</span>
-                <span className="wh-stage-pct" style={{ color: unlocked ? stage.color : undefined }}>
+                <span className="wh-stage-pct" style={{ color: stage.color }}>
                   {pct}% · {st.solved}/{st.total}
                 </span>
               </div>

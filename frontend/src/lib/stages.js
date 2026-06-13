@@ -63,9 +63,3 @@ export function getStageStats(questions, progress) {
   return map
 }
 
-export function isStageUnlocked(stageIdx, stageStats) {
-  if (stageIdx === 0) return true
-  const prev = STAGES[stageIdx - 1]
-  const st   = stageStats[prev.id]
-  return st && st.total > 0 && st.solved / st.total >= 0.5
-}

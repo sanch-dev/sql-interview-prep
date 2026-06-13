@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useProgress } from '../contexts/ProgressContext'
-import { STAGES, getMastery, getNextUp, getStageStats, isStageUnlocked } from '../lib/stages'
+import { STAGES, getMastery, getNextUp, getStageStats } from '../lib/stages'
 import DonutRing from './DonutRing'
 
 const DIFFICULTIES = ['All', 'Easy', 'Medium', 'Hard']
@@ -210,12 +210,11 @@ export default function Sidebar({ questions, selectedId, onSelect, mobileOpen, o
 
                 {STAGES.map((stage, stageIdx) => {
                   const stats    = stageStats[stage.id]
-                  const unlocked = isStageUnlocked(stageIdx, stageStats)
                   const isOpen   = openStages.has(stage.id)
                   const stagePct = stats.total ? Math.round((stats.solved / stats.total) * 100) : 0
 
                   return (
-                    <div key={stage.id} className={`stage-group ${!unlocked ? 'stage-locked' : ''}`}>
+                    <div key={stage.id} className="stage-group">
                       <button
                         className={`stage-header ${isOpen ? 'stage-header-open' : ''}`}
                         onClick={() => toggleStage(stage.id)}
@@ -225,7 +224,6 @@ export default function Sidebar({ questions, selectedId, onSelect, mobileOpen, o
                           <span className="stage-name">{stage.emoji} {stage.label}</span>
                           <span className="stage-meta">{stagePct}% · {stats.solved}/{stats.total}</span>
                         </div>
-                        {!unlocked && <span className="stage-lock-icon">🔒</span>}
                         <span className="stage-chevron">{isOpen ? '▾' : '▸'}</span>
                       </button>
 

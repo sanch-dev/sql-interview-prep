@@ -471,7 +471,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 
 /* ── Stage groups ──────────────────────────────────────── */
 .stage-group { border-radius: var(--r); overflow: hidden; }
-.stage-locked { opacity: 0.55; }
 
 .stage-header {
   width: 100%;
@@ -493,7 +492,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
 .stage-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
 .stage-name { font-size: 12px; font-weight: 700; color: var(--text); line-height: 1.2; }
 .stage-meta { font-size: 11px; color: var(--text-3); }
-.stage-lock-icon { font-size: 12px; flex-shrink: 0; }
 .stage-chevron { font-size: 11px; color: var(--text-3); flex-shrink: 0; }
 
 .stage-cats {
@@ -853,10 +851,9 @@ input, select, textarea { font-family: inherit; font-size: inherit; }
   transform: translateY(-2px);
   box-shadow: var(--shadow);
 }
-.wh-stage-locked { opacity: 0.5; }
-.wh-stage-done   { border-color: var(--success-border); background: var(--success-bg); }
-.wh-stage-ring   { position: relative; }
-.wh-stage-lock, .wh-stage-check {
+.wh-stage-done { border-color: var(--success-border); background: var(--success-bg); }
+.wh-stage-ring  { position: relative; }
+.wh-stage-check {
   position: absolute;
   inset: 0;
   display: flex; align-items: center; justify-content: center;
