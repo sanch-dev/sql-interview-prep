@@ -349,14 +349,14 @@ export const COACHING = {
   },
 
   'm16': {
-    pattern: 'LAG() for Row-over-Row Comparison',
-    deContext: 'Price change detection — finding products that decreased in price — uses LAG to compare each price record to the previous one. Used in pricing pipelines and competitive intelligence.',
+    pattern: 'FIRST_VALUE — First & Last Boundary Extraction',
+    deContext: 'Price drop detection is a standard pricing pipeline pattern. Finding the original and current price of a frequently-changing product requires pulling two endpoints from a history table — a classic first/last boundary problem seen in e-commerce, fintech, and SaaS billing.',
     commonMistakes: [
-      'LAG without PARTITION BY — compares across all products instead of within each product separately',
-      'LAG with wrong ORDER BY direction — ascending order by date is required to get the previous (earlier) price',
+      'Using LAST_VALUE ascending — its default frame ends at the current row, so it returns the row\'s own price, not the partition\'s last. Always use FIRST_VALUE with DESC order instead.',
+      'Forgetting DISTINCT — without it every row in price_history gets the first/last values attached, producing one output row per price-change event rather than one per product.',
     ],
-    debrief: 'LAG(price, 1) OVER (PARTITION BY product_id ORDER BY effective_date) gives the previous price for the same product. WHERE current_price < previous_price finds price decreases. This exact pattern is used for any slowly-changing metric: stock prices, exchange rates, conversion rates.',
-    variants: ['Products whose price increased', 'Price change percentage (not just direction)', 'Products with more than 3 price changes in the last 90 days'],
+    debrief: 'The trick: run FIRST_VALUE twice in the same CTE — once ordered ASC (gives the earliest price) and once ordered DESC (gives the latest). Then DISTINCT collapses each product to a single row. This avoids LAST_VALUE\'s notorious default-frame gotcha and is cleaner than a self-join or MIN/MAX + subquery approach.',
+    variants: ['Products whose price increased (last_price > first_price)', 'Price change percentage: (last_price - first_price) / first_price', 'Products with more than 3 price changes in the last 90 days'],
   },
 
   'm17': {
