@@ -8,7 +8,6 @@ import Workspace from './components/Workspace'
 import AuthPage from './components/AuthPage'
 import ConceptsPage from './pages/ConceptsPage'
 import DebugPage from './pages/DebugPage'
-import AnalyzerPage from './pages/AnalyzerPage'
 import SchemaDesignPage from './pages/SchemaDesignPage'
 import SimulatorPage from './pages/SimulatorPage'
 
@@ -83,7 +82,6 @@ function AppContent() {
       {currentPage === 'concepts'   && <ConceptsPage theme={theme} />}
       {currentPage === 'debug'      && <DebugPage questions={debugQuestions} theme={theme} />}
       {currentPage === 'simulator'  && <SimulatorPage questions={allQuestions} theme={theme} />}
-      {currentPage === 'analyzer'   && <AnalyzerPage theme={theme} />}
       {currentPage === 'schema'     && <SchemaDesignPage theme={theme} />}
     </div>
   )
