@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { COACHING } from '../data/coaching'
 
 export default function CoachingBanner({ questionId }) {
-  const [open, setOpen] = useState(false)
+  const [open, setOpen] = useState(true)
   const c = COACHING[questionId]
   if (!c || !c.commonMistakes?.length) return null
 

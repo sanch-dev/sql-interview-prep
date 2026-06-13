@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
+import { computeAllPatternMastery, computeReadinessScore } from '../data/patterns'
 
 const ProgressContext = createContext(null)
 const LOCAL_KEY     = 'sqlforge_progress_v3'
@@ -112,13 +113,13 @@ export function ProgressProvider({ children }) {
   const attemptedCount = useMemo(() => Object.values(progress).filter(p => p.status === 'attempted').length, [progress])
   const masteredCount  = useMemo(() => Object.values(mastery).filter(m => m.mastered).length, [mastery])
 
-  // Readiness score 0-100: mastered questions count double
+  // Pattern-weighted readiness score 0-100: Σ(pattern_weight × mastery_pct)
   const readinessScore = useMemo(() => {
-    const total = (window.QUESTIONS || []).filter(q => q.type !== 'debug').length
-    if (!total) return 0
-    const score = (masteredCount * 2 + (solvedCount - masteredCount)) / (total * 2) * 100
-    return Math.round(Math.max(0, score))
-  }, [solvedCount, masteredCount])
+    const allQs = (window.QUESTIONS || []).filter(q => q.type !== 'debug')
+    if (!allQs.length) return 0
+    const pm = computeAllPatternMastery(allQs, progress, mastery)
+    return computeReadinessScore(pm)
+  }, [progress, mastery])
 
   // Top weak-spot categories sorted by error frequency
   const topWeakSpots = useMemo(() => {

@@ -1,7 +1,8 @@
 import { useMemo } from 'react'
 import { useProgress } from '../contexts/ProgressContext'
-import { PATTERNS, computeAllPatternMastery, computeReadinessScore, LEVEL_CONFIG } from '../data/patterns'
+import { PATTERNS, computeAllPatternMastery, LEVEL_CONFIG } from '../data/patterns'
 import { getCoachRecommendation } from '../lib/coach'
+import RoadmapPanel from './RoadmapPanel'
 
 function ScoreRing({ score }) {
   const color = score >= 70 ? '#16a34a' : score >= 40 ? '#f59e0b' : '#3b82f6'
@@ -73,16 +74,11 @@ function PatternBar({ pattern, pm, onStart }) {
 }
 
 export default function Welcome({ questions, onSelect }) {
-  const { progress, mastery, masteredCount, topWeakSpots, solvedCount, streak, todaySolved } = useProgress()
+  const { progress, mastery, masteredCount, topWeakSpots, solvedCount, streak, todaySolved, readinessScore } = useProgress()
 
   const patternMasteries = useMemo(
     () => computeAllPatternMastery(questions, progress, mastery),
     [questions, progress, mastery]
-  )
-
-  const readinessScore = useMemo(
-    () => computeReadinessScore(patternMasteries),
-    [patternMasteries]
   )
 
   const rec = useMemo(
@@ -214,6 +210,15 @@ export default function Welcome({ questions, onSelect }) {
           ))}
         </div>
       </section>
+
+      {/* ── Roadmap — show for users still building skills ──── */}
+      {readinessScore < 60 && (
+        <RoadmapPanel
+          questions={questions}
+          readinessScore={readinessScore}
+          patternMasteries={patternMasteries}
+        />
+      )}
 
       {/* ── Weak spots ────────────────────────────────────────── */}
       {topWeakSpots.length > 0 && (

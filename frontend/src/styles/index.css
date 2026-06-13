@@ -4004,3 +4004,108 @@ tr.diff-row-match td { background: var(--success-bg) !important; }
   .coach-pm-row { grid-template-columns: 24px 1fr; gap: 0.4rem; }
   .coach-pm-count, .coach-pm-cta { display: none; }
 }
+
+/* ── Roadmap Panel ───────────────────────────────────────────── */
+
+.roadmap-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.roadmap-track {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.roadmap-phase {
+  display: grid;
+  grid-template-columns: 40px 1fr;
+  align-items: flex-start;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.roadmap-phase:last-child { border-bottom: none; }
+.roadmap-phase.rp-current { background: var(--bg-2); }
+.roadmap-phase.rp-locked  { opacity: 0.55; }
+
+.rp-connector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0 0;
+}
+.rp-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  z-index: 1;
+}
+.rp-line {
+  width: 2px;
+  flex: 1;
+  min-height: 20px;
+  margin-top: 4px;
+}
+.rp-content {
+  padding: 0.85rem 1rem 0.85rem 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+.rp-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.rp-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.rp-time {
+  font-size: 0.7rem;
+  color: var(--text-3);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 0.1rem 0.45rem;
+}
+.rp-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+  border-radius: 20px;
+  padding: 0.15rem 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.rp-desc {
+  font-size: 0.82rem;
+  color: var(--text-2);
+  line-height: 1.45;
+  margin: 0;
+}
+.rp-milestone {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text-2);
+  font-style: italic;
+}
+.rp-milestone-icon {
+  flex-shrink: 0;
+  font-style: normal;
+}
