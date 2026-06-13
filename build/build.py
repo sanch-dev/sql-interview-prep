@@ -80,15 +80,22 @@ def main():
         frontend_out.write_text(content, encoding="utf-8")
         print(f"  also wrote {frontend_out}")
 
-    # Emit api/questions.json for the backend server
-    api_out = Path(__file__).parent.parent / "api" / "questions.json"
+    # Emit questions.json for both the standalone api/ server and Vercel serverless functions
     api_payload = [
         {"id": q["id"], "schema": q["schema"], "solution": q["solution"], "order_matters": q.get("order_matters", False)}
         for q in ALL
     ]
+    api_json = json.dumps(api_payload, indent=2, ensure_ascii=False)
+
+    api_out = Path(__file__).parent.parent / "api" / "questions.json"
     api_out.parent.mkdir(parents=True, exist_ok=True)
-    api_out.write_text(json.dumps(api_payload, indent=2, ensure_ascii=False), encoding="utf-8")
+    api_out.write_text(api_json, encoding="utf-8")
     print(f"  also wrote {api_out}")
+
+    vercel_api_out = Path(__file__).parent.parent / "frontend" / "api" / "questions.json"
+    if vercel_api_out.parent.exists():
+        vercel_api_out.write_text(api_json, encoding="utf-8")
+        print(f"  also wrote {vercel_api_out}")
 
     counts = {}
     for q in ALL:
