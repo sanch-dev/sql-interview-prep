@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
-import { sql, MSSQL, SQLite } from '@codemirror/lang-sql'
+import { sql, MSSQL } from '@codemirror/lang-sql'
 import { oneDark } from '@codemirror/theme-one-dark'
 
 const CONCEPTS = [
@@ -451,10 +451,9 @@ export default function ConceptsPage({ theme }) {
   const [activeCategory, setActiveCategory] = useState('All')
   const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState(null)
-  const [dialect, setDialect] = useState('sqlite')  // 'sqlite' | 'tsql'
   const isDark = theme === 'dark'
 
-  const sqlExt = dialect === 'tsql' ? sql({ dialect: MSSQL }) : sql({ dialect: SQLite })
+  const sqlExt = sql({ dialect: MSSQL })
 
   const filtered = CONCEPTS.filter(c => {
     const inCat = activeCategory === 'All' || c.category === activeCategory
@@ -468,7 +467,7 @@ export default function ConceptsPage({ theme }) {
       <div className="page-header">
         <h1 className="page-title">SQL Concepts</h1>
         <p className="page-subtitle">
-          Reference guide for every concept tested in SQL interviews — with examples in both SQLite and T-SQL (SSMS).
+          Reference guide for every concept tested in SQL interviews — with examples in T-SQL (SSMS / Azure SQL).
         </p>
       </div>
 
@@ -480,16 +479,7 @@ export default function ConceptsPage({ theme }) {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
-          <div className="dialect-switcher">
-            <button
-              className={`dialect-btn ${dialect === 'sqlite' ? 'dialect-btn-active' : ''}`}
-              onClick={() => setDialect('sqlite')}
-            >SQLite</button>
-            <button
-              className={`dialect-btn ${dialect === 'tsql' ? 'dialect-btn-active' : ''}`}
-              onClick={() => setDialect('tsql')}
-            >T-SQL (SSMS)</button>
-          </div>
+          <span className="dialect-badge">T-SQL (SSMS)</span>
         </div>
         <div className="category-pills">
           {['All', ...CATEGORIES].map(cat => (
@@ -526,22 +516,16 @@ export default function ConceptsPage({ theme }) {
                 <p className="concept-summary">{concept.summary}</p>
 
                 <div className="concept-example-label">
-                  {dialect === 'tsql' && concept.exampleTSQL ? 'T-SQL / SSMS Example' : 'Example'}
+                  T-SQL / SSMS Example
                 </div>
                 <CodeMirror
-                  value={dialect === 'tsql' && concept.exampleTSQL ? concept.exampleTSQL : concept.example}
+                  value={concept.exampleTSQL || concept.example}
                   extensions={[sqlExt]}
                   theme={isDark ? oneDark : 'light'}
                   editable={false}
                   basicSetup={{ lineNumbers: false, foldGutter: false, highlightActiveLine: false, autocompletion: false }}
                   className="concept-code"
                 />
-
-                {dialect === 'tsql' && !concept.exampleTSQL && (
-                  <div className="concept-tsql-note">
-                    T-SQL syntax is identical to standard SQL for this concept.
-                  </div>
-                )}
 
                 <div className="concept-tip">
                   <span className="concept-tip-label">Interview tip</span>
