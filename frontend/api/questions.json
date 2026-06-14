@@ -3,420 +3,840 @@
     "id": "e01",
     "schema": "\nCREATE TABLE subscribers (\n    sub_id      INTEGER PRIMARY KEY,\n    name        TEXT NOT NULL,\n    country     TEXT NOT NULL,\n    plan        TEXT NOT NULL,      -- 'basic', 'standard', 'premium'\n    status      TEXT NOT NULL,      -- 'active', 'paused', 'cancelled'\n    signup_date TEXT NOT NULL\n);\nINSERT INTO subscribers VALUES\n (1,  'Ava Chen',        'US', 'premium',  'active',    '2024-03-12'),\n (2,  'Liam Patel',      'IN', 'basic',    'active',    '2024-05-01'),\n (3,  'Sofia Rossi',     'IT', 'premium',  'cancelled', '2023-11-20'),\n (4,  'Noah Kim',        'KR', 'standard', 'active',    '2024-01-15'),\n (5,  'Emma Müller',     'DE', 'premium',  'active',    '2024-07-09'),\n (6,  'Lucas Silva',     'BR', 'premium',  'paused',    '2024-02-28'),\n (7,  'Mia Johnson',     'US', 'standard', 'cancelled', '2023-09-05'),\n (8,  'Yuki Tanaka',     'JP', 'premium',  'active',    '2025-01-22'),\n (9,  'Omar Haddad',     'AE', 'basic',    'paused',    '2024-10-30'),\n (10, 'Isabella Lopez',  'MX', 'premium',  'active',    '2024-12-14');\n",
     "solution": "\nSELECT name, country\nFROM subscribers\nWHERE plan = 'premium' AND status = 'active'\nORDER BY name;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "e02",
     "schema": "\nCREATE TABLE employees (\n    emp_id     INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL,\n    department TEXT NOT NULL,\n    salary     INTEGER NOT NULL\n);\nINSERT INTO employees VALUES\n (1, 'Dana Wright',   'Engineering', 120000),\n (2, 'Raj Mehta',     'Engineering', 120000),\n (3, 'Lena Fischer',  'Product',     110000),\n (4, 'Tom Becker',    'Sales',        95000),\n (5, 'Aisha Bello',   'Marketing',    88000),\n (6, 'Chris Novak',   'Support',      61000),\n (7, 'Grace Liu',     'Engineering', 104000);\n",
     "solution": "\nSELECT MAX(salary) AS second_salary\nFROM employees\nWHERE salary < (SELECT MAX(salary) FROM employees);\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "e03",
     "schema": "\nCREATE TABLE customers (\n    customer_id INTEGER PRIMARY KEY,\n    name        TEXT NOT NULL,\n    joined_date TEXT NOT NULL\n);\nCREATE TABLE orders (\n    order_id    INTEGER PRIMARY KEY,\n    customer_id INTEGER NOT NULL,\n    amount      REAL NOT NULL,\n    order_date  TEXT NOT NULL\n);\nINSERT INTO customers VALUES\n (1, 'Harper Reed',   '2024-01-03'),\n (2, 'Diego Marin',   '2024-02-17'),\n (3, 'Pria Nair',     '2024-03-09'),\n (4, 'Sam Okafor',    '2024-04-21'),\n (5, 'Elena Petrova', '2024-05-30'),\n (6, 'Jack Murphy',   '2024-06-11');\nINSERT INTO orders VALUES\n (101, 1, 64.50,  '2024-02-01'),\n (102, 1, 19.99,  '2024-03-15'),\n (103, 3, 230.00, '2024-04-02'),\n (104, 5, 12.75,  '2024-06-20'),\n (105, 3, 89.10,  '2024-07-08');\n",
     "solution": "\nSELECT c.name\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nWHERE o.order_id IS NULL;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "e04",
     "schema": "\nCREATE TABLE contacts (\n    contact_id INTEGER PRIMARY KEY,\n    email      TEXT NOT NULL,\n    created_at TEXT NOT NULL\n);\nINSERT INTO contacts VALUES\n (1, 'jo@example.com',     '2025-01-04'),\n (2, 'amy@example.com',    '2025-01-06'),\n (3, 'jo@example.com',     '2025-01-11'),\n (4, 'kit@example.com',    '2025-01-12'),\n (5, 'amy@example.com',    '2025-02-02'),\n (6, 'jo@example.com',     '2025-02-09'),\n (7, 'lee@example.com',    '2025-02-15'),\n (8, 'zara@example.com',   '2025-03-01'),\n (9, 'kit@example.com',    '2025-03-03');\n",
     "solution": "\nSELECT email, COUNT(*) AS times_seen\nFROM contacts\nGROUP BY email\nHAVING COUNT(*) > 1;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "e05",
     "schema": "\nCREATE TABLE products (\n    product_id INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL,\n    category   TEXT NOT NULL\n);\nCREATE TABLE order_items (\n    item_id    INTEGER PRIMARY KEY,\n    product_id INTEGER NOT NULL,\n    quantity   INTEGER NOT NULL,\n    unit_price REAL NOT NULL\n);\nINSERT INTO products VALUES\n (1, 'Aurora Headphones', 'Audio'),\n (2, 'Pulse Smartwatch',  'Wearables'),\n (3, 'Nimbus Keyboard',   'Accessories'),\n (4, 'Volt Power Bank',   'Accessories'),\n (5, 'Echo Webcam',       'Video'),\n (6, 'Drift Mouse',       'Accessories'),\n (7, 'Beam Projector',    'Video');\nINSERT INTO order_items VALUES\n (1,  1, 2, 129.99),\n (2,  2, 1, 199.00),\n (3,  3, 3,  79.50),\n (4,  1, 1, 129.99),\n (5,  4, 5,  39.99),\n (6,  5, 2,  89.00),\n (7,  7, 1, 449.00),\n (8,  2, 2, 199.00),\n (9,  6, 4,  24.50),\n (10, 3, 1,  79.50),\n (11, 7, 1, 449.00),\n (12, 5, 1,  89.00);\n",
     "solution": "\nSELECT p.name AS product_name,\n       SUM(oi.quantity * oi.unit_price) AS revenue\nFROM products p\nJOIN order_items oi ON oi.product_id = p.product_id\nGROUP BY p.product_id, p.name\nORDER BY revenue DESC\nLIMIT 5;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "e06",
     "schema": "\nCREATE TABLE rides (\n    ride_id   INTEGER PRIMARY KEY,\n    city      TEXT NOT NULL,\n    ride_date TEXT NOT NULL,\n    fare      REAL,\n    status    TEXT NOT NULL   -- 'completed', 'cancelled_by_rider', 'cancelled_by_driver'\n);\nINSERT INTO rides VALUES\n (1,  'Austin',  '2025-04-01', 18.40, 'completed'),\n (2,  'Austin',  '2025-04-01', NULL,  'cancelled_by_rider'),\n (3,  'Dallas',  '2025-04-01', 22.10, 'completed'),\n (4,  'Austin',  '2025-04-02', 9.75,  'completed'),\n (5,  'Dallas',  '2025-04-02', NULL,  'cancelled_by_driver'),\n (6,  'Dallas',  '2025-04-02', 31.00, 'completed'),\n (7,  'Austin',  '2025-04-02', 12.30, 'completed'),\n (8,  'Austin',  '2025-04-03', NULL,  'cancelled_by_rider'),\n (9,  'Dallas',  '2025-04-03', NULL,  'cancelled_by_rider'),\n (10, 'Austin',  '2025-04-04', 27.60, 'completed'),\n (11, 'Dallas',  '2025-04-04', 16.85, 'completed'),\n (12, 'Austin',  '2025-04-04', 8.20,  'completed');\n",
     "solution": "\nSELECT ride_date, COUNT(*) AS completed_rides\nFROM rides\nWHERE status = 'completed'\nGROUP BY ride_date\nORDER BY ride_date;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "e07",
     "schema": "\nCREATE TABLE employees (\n    emp_id     INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL,\n    salary     INTEGER NOT NULL,\n    manager_id INTEGER          -- NULL for the CEO\n);\nINSERT INTO employees VALUES\n (1, 'Priya Sharma',  185000, NULL),\n (2, 'Ben Carter',    140000, 1),\n (3, 'Olivia Stone',  152000, 1),\n (4, 'Marco Ruiz',    149000, 2),\n (5, 'Tina Wong',     131000, 2),\n (6, 'Felix Braun',   158000, 3),\n (7, 'Nora Quinn',    99000,  3),\n (8, 'Dev Anand',     162000, 4);\n",
     "solution": "\nSELECT e.name AS employee\nFROM employees e\nJOIN employees m ON m.emp_id = e.manager_id\nWHERE e.salary > m.salary;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "e08",
     "schema": "\nCREATE TABLE movies (\n    movie_id INTEGER PRIMARY KEY,\n    title    TEXT NOT NULL\n);\nCREATE TABLE ratings (\n    rating_id INTEGER PRIMARY KEY,\n    movie_id  INTEGER NOT NULL,\n    user_id   INTEGER NOT NULL,\n    rating    INTEGER NOT NULL   -- 1 to 5\n);\nINSERT INTO movies VALUES\n (1, 'Midnight Circuit'),\n (2, 'The Paper Garden'),\n (3, 'Gravity Falls Apart'),\n (4, 'Solstice'),\n (5, 'Iron Harvest');\nINSERT INTO ratings VALUES\n (1,  1, 11, 5), (2,  1, 12, 4), (3,  1, 13, 5), (4,  1, 14, 3),\n (5,  2, 11, 5), (6,  2, 15, 5),\n (7,  3, 12, 4), (8,  3, 13, 4), (9,  3, 16, 5), (10, 3, 17, 4),\n (11, 4, 14, 2), (12, 4, 15, 3), (13, 4, 16, 3),\n (14, 5, 11, 4), (15, 5, 17, 5), (16, 5, 18, 2);\n",
     "solution": "\nSELECT m.title,\n       ROUND(AVG(r.rating), 2) AS avg_rating\nFROM movies m\nJOIN ratings r ON r.movie_id = m.movie_id\nGROUP BY m.movie_id, m.title\nHAVING AVG(r.rating) >= 4.0 AND COUNT(*) >= 3;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "e09",
     "schema": "\nCREATE TABLE users (\n    user_id INTEGER PRIMARY KEY,\n    name    TEXT NOT NULL\n);\nCREATE TABLE addresses (\n    address_id INTEGER PRIMARY KEY,\n    user_id    INTEGER NOT NULL,\n    city       TEXT NOT NULL,\n    state      TEXT NOT NULL\n);\nINSERT INTO users VALUES\n (1, 'Wren Adler'),\n (2, 'Kofi Mensah'),\n (3, 'Lara Voss'),\n (4, 'Theo Brandt'),\n (5, 'June Park');\nINSERT INTO addresses VALUES\n (1, 2, 'Seattle',  'WA'),\n (2, 3, 'Denver',   'CO'),\n (3, 5, 'Portland', 'OR');\n",
     "solution": "\nSELECT u.name, a.city\nFROM users u\nLEFT JOIN addresses a ON a.user_id = u.user_id;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "e10",
     "schema": "\nCREATE TABLE orders (\n    order_id   INTEGER PRIMARY KEY,\n    customer_id INTEGER NOT NULL,\n    amount     REAL NOT NULL,\n    order_date TEXT NOT NULL\n);\nINSERT INTO orders VALUES\n (1,  201, 23.50,  '2025-02-01'),\n (2,  202, 50.00,  '2025-02-01'),\n (3,  203, 310.25, '2025-02-02'),\n (4,  201, 75.80,  '2025-02-03'),\n (5,  204, 200.00, '2025-02-04'),\n (6,  205, 12.99,  '2025-02-05'),\n (7,  202, 540.00, '2025-02-06'),\n (8,  206, 49.99,  '2025-02-07'),\n (9,  203, 150.00, '2025-02-08'),\n (10, 207, 201.10, '2025-02-09');\n",
     "solution": "\nSELECT CASE\n         WHEN amount < 50 THEN 'small'\n         WHEN amount <= 200 THEN 'medium'\n         ELSE 'large'\n       END AS size_category,\n       COUNT(*) AS order_count\nFROM orders\nGROUP BY size_category;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "e11",
     "schema": "\nCREATE TABLE products (\n    product_id INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL,\n    category   TEXT NOT NULL\n);\nCREATE TABLE order_items (\n    item_id    INTEGER PRIMARY KEY,\n    product_id INTEGER NOT NULL,\n    quantity   INTEGER NOT NULL,\n    unit_price REAL NOT NULL\n);\nINSERT INTO products VALUES\n (1, 'Oak Bookshelf',    'Furniture'),\n (2, 'Linen Throw',      'Textiles'),\n (3, 'Ceramic Vase',     'Decor'),\n (4, 'Walnut Desk',      'Furniture'),\n (5, 'Wool Rug',         'Textiles'),\n (6, 'Brass Lamp',       'Decor'),\n (7, 'Velvet Cushion',   'Textiles');\nINSERT INTO order_items VALUES\n (1,  1, 1, 249.00),\n (2,  2, 3, 45.50),\n (3,  3, 2, 38.00),\n (4,  4, 1, 599.00),\n (5,  5, 1, 320.00),\n (6,  6, 2, 89.99),\n (7,  7, 4, 29.99),\n (8,  1, 1, 249.00),\n (9,  3, 1, 38.00),\n (10, 2, 2, 45.50);\n",
     "solution": "\nSELECT p.category,\n       ROUND(SUM(oi.quantity * oi.unit_price), 2) AS total_revenue\nFROM products p\nJOIN order_items oi ON oi.product_id = p.product_id\nGROUP BY p.category\nORDER BY total_revenue DESC;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "e12",
     "schema": "\nCREATE TABLE accounts (\n    account_id INTEGER PRIMARY KEY,\n    username   TEXT NOT NULL,\n    email      TEXT,              -- NULL if never provided\n    last_login TEXT               -- NULL if never logged in\n);\nINSERT INTO accounts VALUES\n (1, 'sky_walker',  'sky@mail.com',   '2025-03-14'),\n (2, 'pixel_pete',  NULL,             '2025-04-02'),\n (3, 'quietfox',    'fox@mail.com',   '2024-08-19'),\n (4, 'mango_dev',   'mango@mail.com', '2025-05-21'),\n (5, 'lostuser99',  NULL,             '2024-02-11'),\n (6, 'nova_r',      'nova@mail.com',  '2024-12-31'),\n (7, 'beta_tester', 'beta@mail.com',  '2025-01-01');\n",
     "solution": "\nSELECT account_id, username\nFROM accounts\nWHERE email IS NULL\n   OR last_login < '2025-01-01';\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "e13",
     "schema": "\nCREATE TABLE ios_events (\n    event_id   INTEGER PRIMARY KEY,\n    user_id    INTEGER NOT NULL,\n    event_date TEXT NOT NULL\n);\nCREATE TABLE android_events (\n    event_id   INTEGER PRIMARY KEY,\n    user_id    INTEGER NOT NULL,\n    event_date TEXT NOT NULL\n);\nINSERT INTO ios_events VALUES\n (1, 501, '2025-05-01'),\n (2, 502, '2025-05-01'),\n (3, 501, '2025-05-02'),\n (4, 504, '2025-05-03'),\n (5, 506, '2025-05-04');\nINSERT INTO android_events VALUES\n (1, 502, '2025-05-01'),\n (2, 503, '2025-05-02'),\n (3, 505, '2025-05-02'),\n (4, 503, '2025-05-03'),\n (5, 506, '2025-05-05');\n",
     "solution": "\nSELECT user_id FROM ios_events\nUNION\nSELECT user_id FROM android_events\nORDER BY user_id;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "e14",
     "schema": "\nCREATE TABLE tickets (\n    ticket_id  INTEGER PRIMARY KEY,\n    subject    TEXT NOT NULL,\n    created_at TEXT NOT NULL\n);\nINSERT INTO tickets VALUES\n (1, 'Refund for damaged package',           '2025-06-01'),\n (2, 'Where is my order?',                   '2025-06-01'),\n (3, 'Please process my REFUND immediately', '2025-06-02'),\n (4, 'Change delivery address',              '2025-06-02'),\n (5, 'partial refund request',               '2025-06-03'),\n (6, 'App crashes on login',                 '2025-06-03'),\n (7, 'Refunding my subscription fee',        '2025-06-04'),\n (8, 'Damaged box, want money back',         '2025-06-04');\n",
     "solution": "\nSELECT ticket_id, subject\nFROM tickets\nWHERE LOWER(subject) LIKE '%refund%';\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "e15",
     "schema": "\nCREATE TABLE listings (\n    listing_id INTEGER PRIMARY KEY,\n    category   TEXT NOT NULL,\n    title      TEXT NOT NULL,\n    price      REAL NOT NULL\n);\nINSERT INTO listings VALUES\n (1,  'Bikes',   'Vintage road bike',     280.00),\n (2,  'Bikes',   'Kids mountain bike',     95.00),\n (3,  'Bikes',   'Carbon gravel bike',   1450.00),\n (4,  'Cameras', 'Film SLR with lens',    175.00),\n (5,  'Cameras', 'Action cam',             89.50),\n (6,  'Cameras', 'Mirrorless body',       640.00),\n (7,  'Laptops', '13-inch ultrabook',     520.00),\n (8,  'Laptops', 'Gaming laptop',         980.00),\n (9,  'Laptops', 'Old netbook',            60.00),\n (10, 'Bikes',   'Folding commuter',      330.00);\n",
     "solution": "\nSELECT category,\n       MIN(price) AS min_price,\n       MAX(price) AS max_price\nFROM listings\nGROUP BY category\nORDER BY category;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "e16",
     "schema": "\nCREATE TABLE orders (\n    order_id   INTEGER PRIMARY KEY,\n    order_date TEXT NOT NULL,\n    amount     REAL NOT NULL\n);\nINSERT INTO orders VALUES\n (1,  '2025-06-01', 32.50),  -- Sunday\n (2,  '2025-06-02', 18.00),  -- Monday\n (3,  '2025-06-06', 45.25),  -- Friday\n (4,  '2025-06-07', 38.10),  -- Saturday\n (5,  '2025-06-07', 22.75),  -- Saturday\n (6,  '2025-06-08', 29.00),  -- Sunday\n (7,  '2025-06-08', 51.30),  -- Sunday\n (8,  '2025-06-09', 16.45),  -- Monday\n (9,  '2025-06-13', 33.20),  -- Friday\n (10, '2025-06-14', 27.85),  -- Saturday\n (11, '2025-06-14', 40.00),  -- Saturday\n (12, '2025-06-15', 35.60);  -- Sunday\n",
     "solution": "\nSELECT strftime('%w', order_date) AS weekday_num,\n       COUNT(*) AS order_count\nFROM orders\nGROUP BY weekday_num\nORDER BY weekday_num;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "m01",
     "schema": "\nCREATE TABLE departments (\n    dept_id   INTEGER PRIMARY KEY,\n    dept_name TEXT NOT NULL\n);\nCREATE TABLE employees (\n    emp_id  INTEGER PRIMARY KEY,\n    name    TEXT NOT NULL,\n    salary  INTEGER NOT NULL,\n    dept_id INTEGER NOT NULL\n);\nINSERT INTO departments VALUES\n (1, 'Engineering'), (2, 'Sales'), (3, 'Design');\nINSERT INTO employees VALUES\n (1, 'Ira Glass',     142000, 1),\n (2, 'Mona Diaz',     155000, 1),\n (3, 'Kyle Renner',   155000, 1),\n (4, 'Suki Ito',      121000, 1),\n (5, 'Pat Boyle',      98000, 2),\n (6, 'Gail Strand',   104000, 2),\n (7, 'Ravi Kapoor',    87000, 2),\n (8, 'Fern Ellis',    112000, 3),\n (9, 'Drew Holt',     109000, 3);\n",
     "solution": "\nWITH ranked AS (\n    SELECT d.dept_name,\n           e.name AS employee,\n           e.salary,\n           RANK() OVER (PARTITION BY e.dept_id ORDER BY e.salary DESC) AS rnk\n    FROM employees e\n    JOIN departments d ON d.dept_id = e.dept_id\n)\nSELECT dept_name, employee, salary\nFROM ranked\nWHERE rnk = 1;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "m02",
     "schema": "\nCREATE TABLE events (\n    event_id   INTEGER PRIMARY KEY,\n    user_id    INTEGER NOT NULL,\n    event_type TEXT NOT NULL,\n    event_time TEXT NOT NULL     -- 'YYYY-MM-DD HH:MM:SS'\n);\nINSERT INTO events VALUES\n (1,  101, 'post',  '2025-01-03 09:12:00'),\n (2,  102, 'like',  '2025-01-05 14:30:00'),\n (3,  101, 'like',  '2025-01-18 11:02:00'),\n (4,  103, 'post',  '2025-01-22 19:45:00'),\n (5,  101, 'post',  '2025-02-01 08:00:00'),\n (6,  104, 'like',  '2025-02-09 16:20:00'),\n (7,  104, 'post',  '2025-02-09 16:25:00'),\n (8,  102, 'post',  '2025-02-14 10:10:00'),\n (9,  105, 'like',  '2025-02-27 21:05:00'),\n (10, 103, 'like',  '2025-03-02 12:00:00'),\n (11, 103, 'post',  '2025-03-15 13:30:00'),\n (12, 106, 'post',  '2025-03-20 18:40:00'),\n (13, 101, 'like',  '2025-03-28 07:55:00');\n",
     "solution": "\nSELECT strftime('%Y-%m', event_time) AS month,\n       COUNT(DISTINCT user_id) AS mau\nFROM events\nGROUP BY month\nORDER BY month;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "m03",
     "schema": "\nCREATE TABLE scores (\n    score_id INTEGER PRIMARY KEY,\n    player   TEXT NOT NULL,\n    points   INTEGER NOT NULL\n);\nINSERT INTO scores VALUES\n (1, 'frostbyte',   2840),\n (2, 'lunarmoth',   3120),\n (3, 'pixelpunk',   2840),\n (4, 'quasar_kid',  1990),\n (5, 'renegade7',   3120),\n (6, 'softcrash',   2210),\n (7, 'tetra',       1990),\n (8, 'voidwalker',  2750);\n",
     "solution": "\nSELECT player,\n       points,\n       DENSE_RANK() OVER (ORDER BY points DESC) AS player_rank\nFROM scores\nORDER BY player_rank, player;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "m04",
     "schema": "\nCREATE TABLE readings (\n    reading_date TEXT PRIMARY KEY,\n    temp_c       REAL NOT NULL\n);\nINSERT INTO readings VALUES\n ('2025-03-01', 11.5),\n ('2025-03-02', 13.0),\n ('2025-03-03', 12.1),\n ('2025-03-04', 15.4),\n -- 2025-03-05 missing: sensor failure\n ('2025-03-06', 19.0),\n ('2025-03-07', 17.2),\n ('2025-03-08', 18.9);\n",
     "solution": "\nSELECT today.reading_date\nFROM readings today\nJOIN readings yesterday\n  ON yesterday.reading_date = date(today.reading_date, '-1 day')\nWHERE today.temp_c > yesterday.temp_c;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "m05",
     "schema": "\nCREATE TABLE shipment_events (\n    event_id    INTEGER PRIMARY KEY,\n    shipment_id INTEGER NOT NULL,\n    status      TEXT NOT NULL,\n    event_time  TEXT NOT NULL\n);\nINSERT INTO shipment_events VALUES\n (1,  501, 'label_created', '2025-05-01 08:00:00'),\n (2,  501, 'picked_up',     '2025-05-01 14:30:00'),\n (3,  501, 'in_transit',    '2025-05-02 06:15:00'),\n (4,  501, 'delivered',     '2025-05-04 11:42:00'),\n (5,  502, 'label_created', '2025-05-02 09:10:00'),\n (6,  502, 'picked_up',     '2025-05-03 10:05:00'),\n (7,  502, 'in_transit',    '2025-05-03 22:48:00'),\n (8,  503, 'label_created', '2025-05-04 16:20:00'),\n (9,  504, 'label_created', '2025-05-01 12:00:00'),\n (10, 504, 'picked_up',     '2025-05-02 09:30:00'),\n (11, 504, 'in_transit',    '2025-05-02 18:55:00'),\n (12, 504, 'out_for_delivery', '2025-05-05 07:25:00');\n",
     "solution": "\nWITH numbered AS (\n    SELECT shipment_id,\n           status,\n           ROW_NUMBER() OVER (\n               PARTITION BY shipment_id\n               ORDER BY event_time DESC\n           ) AS rn\n    FROM shipment_events\n)\nSELECT shipment_id, status\nFROM numbered\nWHERE rn = 1;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "m06",
     "schema": "\nCREATE TABLE daily_revenue (\n    sale_date TEXT PRIMARY KEY,\n    revenue   REAL NOT NULL\n);\nINSERT INTO daily_revenue VALUES\n ('2025-06-01', 1240.00),\n ('2025-06-02',  980.50),\n ('2025-06-03', 1530.25),\n ('2025-06-04',  640.00),\n ('2025-06-05', 2210.75),\n ('2025-06-06', 1875.00),\n ('2025-06-07',  990.40);\n",
     "solution": "\nSELECT sale_date,\n       revenue,\n       SUM(revenue) OVER (ORDER BY sale_date) AS running_total\nFROM daily_revenue\nORDER BY sale_date;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "m07",
     "schema": "\nCREATE TABLE orders (\n    order_id    INTEGER PRIMARY KEY,\n    customer_id INTEGER NOT NULL,\n    order_date  TEXT NOT NULL,\n    total       REAL NOT NULL\n);\nINSERT INTO orders VALUES\n (1,  11, '2025-03-01', 24.10),\n (2,  12, '2025-03-01', 31.75),\n (3,  11, '2025-03-04', 18.20),\n (4,  13, '2025-03-05', 42.00),\n (5,  14, '2025-03-06', 15.60),\n (6,  12, '2025-03-09', 27.35),\n (7,  15, '2025-03-10', 22.90),\n (8,  11, '2025-03-12', 19.99),\n (9,  16, '2025-03-15', 38.40),\n (10, 17, '2025-03-18', 11.25),\n (11, 13, '2025-03-21', 29.80),\n (12, 16, '2025-03-25', 17.10);\n",
     "solution": "\nWITH per_customer AS (\n    SELECT customer_id, COUNT(*) AS order_count\n    FROM orders\n    GROUP BY customer_id\n)\nSELECT ROUND(100.0 * SUM(CASE WHEN order_count >= 2 THEN 1 ELSE 0 END) / COUNT(*), 1)\n         AS repeat_rate\nFROM per_customer;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "m08",
     "schema": "\nCREATE TABLE products (\n    product_id INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL\n);\nCREATE TABLE order_items (\n    order_id   INTEGER NOT NULL,\n    product_id INTEGER NOT NULL,\n    PRIMARY KEY (order_id, product_id)\n);\nINSERT INTO products VALUES\n (1, 'Almond Butter'),\n (2, 'Banana Chips'),\n (3, 'Cold Brew'),\n (4, 'Dark Chocolate'),\n (5, 'Granola');\nINSERT INTO order_items VALUES\n (901, 1), (901, 2), (901, 5),\n (902, 1), (902, 5),\n (903, 3), (903, 4),\n (904, 1), (904, 2),\n (905, 3), (905, 4), (905, 5),\n (906, 2), (906, 5),\n (907, 1), (907, 5);\n",
     "solution": "\nSELECT pa.name AS product_a,\n       pb.name AS product_b,\n       COUNT(DISTINCT i1.order_id) AS orders_together\nFROM order_items i1\nJOIN order_items i2\n  ON i2.order_id = i1.order_id\nJOIN products pa ON pa.product_id = i1.product_id\nJOIN products pb ON pb.product_id = i2.product_id\nWHERE pa.name < pb.name\nGROUP BY pa.name, pb.name\nHAVING COUNT(DISTINCT i1.order_id) >= 2;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "m09",
     "schema": "\nCREATE TABLE bookings (\n    booking_id  INTEGER PRIMARY KEY,\n    customer_id INTEGER NOT NULL,\n    booking_date TEXT NOT NULL,\n    nightly_rate REAL NOT NULL\n);\nINSERT INTO bookings VALUES\n (1, 71, '2024-11-02', 145.00),\n (2, 72, '2024-11-15', 210.00),\n (3, 71, '2025-01-10', 132.00),\n (4, 73, '2025-01-12', 95.00),\n (5, 72, '2025-02-03', 188.00),\n (6, 71, '2025-03-22', 176.00),\n (7, 74, '2025-04-01', 230.00),\n (8, 73, '2025-04-18', 110.00),\n (9, 72, '2025-05-09', 205.00);\n",
     "solution": "\nWITH numbered AS (\n    SELECT booking_id,\n           customer_id,\n           booking_date,\n           ROW_NUMBER() OVER (\n               PARTITION BY customer_id\n               ORDER BY booking_date\n           ) AS rn\n    FROM bookings\n)\nSELECT customer_id, booking_id, booking_date\nFROM numbered\nWHERE rn = 2;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "m10",
     "schema": "\nCREATE TABLE visits (\n    visit_id   INTEGER PRIMARY KEY,\n    channel    TEXT NOT NULL,    -- 'search', 'social', 'email', 'referral'\n    visit_date TEXT NOT NULL\n);\nCREATE TABLE signups (\n    signup_id  INTEGER PRIMARY KEY,\n    visit_id   INTEGER NOT NULL,\n    signup_date TEXT NOT NULL\n);\nINSERT INTO visits VALUES\n (1,  'search',   '2025-05-01'), (2,  'search',   '2025-05-01'),\n (3,  'social',   '2025-05-01'), (4,  'email',    '2025-05-02'),\n (5,  'search',   '2025-05-02'), (6,  'social',   '2025-05-02'),\n (7,  'referral', '2025-05-03'), (8,  'search',   '2025-05-03'),\n (9,  'email',    '2025-05-03'), (10, 'social',   '2025-05-04'),\n (11, 'search',   '2025-05-04'), (12, 'email',    '2025-05-04'),\n (13, 'social',   '2025-05-05'), (14, 'referral', '2025-05-05'),\n (15, 'search',   '2025-05-05');\nINSERT INTO signups VALUES\n (1, 2,  '2025-05-01'),\n (2, 5,  '2025-05-02'),\n (3, 4,  '2025-05-02'),\n (4, 8,  '2025-05-03'),\n (5, 12, '2025-05-04'),\n (6, 10, '2025-05-04');\n",
     "solution": "\nSELECT v.channel,\n       COUNT(*) AS visits,\n       COUNT(s.signup_id) AS signups,\n       ROUND(100.0 * COUNT(s.signup_id) / COUNT(*), 1) AS conversion_rate\nFROM visits v\nLEFT JOIN signups s ON s.visit_id = v.visit_id\nGROUP BY v.channel\nORDER BY conversion_rate DESC;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "m11",
     "schema": "\nCREATE TABLE users (\n    user_id     INTEGER PRIMARY KEY,\n    signup_date TEXT NOT NULL\n);\nCREATE TABLE orders (\n    order_id   INTEGER PRIMARY KEY,\n    user_id    INTEGER NOT NULL,\n    order_date TEXT NOT NULL,\n    total      REAL NOT NULL\n);\nINSERT INTO users VALUES\n (1, '2025-01-05'),\n (2, '2025-01-10'),\n (3, '2025-01-12'),\n (4, '2025-02-01'),\n (5, '2025-02-14'),\n (6, '2025-03-03');\nINSERT INTO orders VALUES\n (1, 1, '2025-01-07', 49.00),\n (2, 1, '2025-01-20', 25.50),\n (3, 2, '2025-02-09', 120.00),\n (4, 3, '2025-01-12', 15.75),\n (5, 5, '2025-03-02', 60.20),\n (6, 2, '2025-03-15', 35.00),\n (7, 5, '2025-04-11', 78.90);\n",
     "solution": "\nWITH first_orders AS (\n    SELECT user_id, MIN(order_date) AS first_order_date\n    FROM orders\n    GROUP BY user_id\n)\nSELECT ROUND(\n         AVG(julianday(f.first_order_date) - julianday(u.signup_date)),\n         1\n       ) AS avg_days_to_first_order\nFROM first_orders f\nJOIN users u ON u.user_id = f.user_id;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "m12",
     "schema": "\nCREATE TABLE trips (\n    trip_id   INTEGER PRIMARY KEY,\n    trip_date TEXT NOT NULL,\n    status    TEXT NOT NULL  -- 'completed', 'cancelled_by_driver', 'cancelled_by_rider'\n);\nINSERT INTO trips VALUES\n (1,  '2025-05-10', 'completed'),\n (2,  '2025-05-10', 'cancelled_by_rider'),\n (3,  '2025-05-10', 'completed'),\n (4,  '2025-05-10', 'completed'),\n (5,  '2025-05-11', 'cancelled_by_driver'),\n (6,  '2025-05-11', 'cancelled_by_rider'),\n (7,  '2025-05-11', 'completed'),\n (8,  '2025-05-12', 'completed'),\n (9,  '2025-05-12', 'completed'),\n (10, '2025-05-12', 'completed'),\n (11, '2025-05-13', 'cancelled_by_driver'),\n (12, '2025-05-13', 'completed'),\n (13, '2025-05-13', 'completed'),\n (14, '2025-05-13', 'cancelled_by_rider');\n",
     "solution": "\nSELECT trip_date,\n       ROUND(\n         100.0 * SUM(CASE WHEN status LIKE 'cancelled%' THEN 1 ELSE 0 END) / COUNT(*),\n         1\n       ) AS cancellation_rate\nFROM trips\nGROUP BY trip_date\nORDER BY trip_date;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "m13",
     "schema": "\nCREATE TABLE customers (\n    customer_id INTEGER PRIMARY KEY,\n    name        TEXT NOT NULL\n);\nCREATE TABLE orders (\n    order_id    INTEGER PRIMARY KEY,\n    customer_id INTEGER NOT NULL,\n    amount      REAL NOT NULL\n);\nINSERT INTO customers VALUES\n (1, 'Marisol Vega'),\n (2, 'Henrik Olsen'),\n (3, 'Asha Gupta'),\n (4, 'Leo Costa'),\n (5, 'Faye Ndiaye');\nINSERT INTO orders VALUES\n (1,  1, 120.00),\n (2,  1, 340.00),\n (3,  2, 89.00),\n (4,  3, 410.00),\n (5,  3, 95.00),\n (6,  3, 230.00),\n (7,  4, 60.00),\n (8,  4, 75.00),\n (9,  5, 180.00),\n (10, 1, 55.00);\n",
     "solution": "\nWITH totals AS (\n    SELECT customer_id, SUM(amount) AS total\n    FROM orders\n    GROUP BY customer_id\n)\nSELECT c.name,\n       t.total AS total_spent\nFROM totals t\nJOIN customers c ON c.customer_id = t.customer_id\nWHERE t.total > (SELECT AVG(total) FROM totals)\nORDER BY total_spent DESC;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "m14",
     "schema": "\nCREATE TABLE products (\n    product_id INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL,\n    category   TEXT NOT NULL\n);\nCREATE TABLE customers (\n    customer_id INTEGER PRIMARY KEY,\n    name        TEXT NOT NULL\n);\nCREATE TABLE purchases (\n    purchase_id INTEGER PRIMARY KEY,\n    customer_id INTEGER NOT NULL,\n    product_id  INTEGER NOT NULL\n);\nINSERT INTO products VALUES\n (1, 'Trail Mix',      'Snacks'),\n (2, 'Sparkling Water','Beverages'),\n (3, 'Paper Towels',   'Household'),\n (4, 'Dark Roast',     'Beverages'),\n (5, 'Pita Chips',     'Snacks'),\n (6, 'Dish Soap',      'Household');\nINSERT INTO customers VALUES\n (1, 'Rosa Linden'),\n (2, 'Max Okada'),\n (3, 'Ines Farah'),\n (4, 'Coby Mitchell');\nINSERT INTO purchases VALUES\n (1,  1, 1), (2,  1, 2), (3,  1, 3),\n (4,  2, 1), (5,  2, 5), (6,  2, 1),\n (7,  3, 4), (8,  3, 5), (9,  3, 6), (10, 3, 2),\n (11, 4, 3), (12, 4, 4);\n",
     "solution": "\nSELECT c.name\nFROM customers c\nJOIN purchases pu ON pu.customer_id = c.customer_id\nJOIN products  pr ON pr.product_id = pu.product_id\nGROUP BY c.customer_id, c.name\nHAVING COUNT(DISTINCT pr.category) =\n       (SELECT COUNT(DISTINCT category) FROM products);\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "m15",
     "schema": "\nCREATE TABLE sales (\n    sale_id   INTEGER PRIMARY KEY,\n    product   TEXT NOT NULL,\n    sale_date TEXT NOT NULL,\n    amount    REAL NOT NULL\n);\nINSERT INTO sales VALUES\n (1,  'Alpha Kit', '2025-01-15', 1200.00),\n (2,  'Alpha Kit', '2025-02-20',  800.00),\n (3,  'Beta Pack', '2025-03-05', 1500.00),\n (4,  'Alpha Kit', '2025-04-12',  950.00),\n (5,  'Beta Pack', '2025-05-30',  700.00),\n (6,  'Beta Pack', '2025-06-18',  650.00),\n (7,  'Alpha Kit', '2025-08-09', 1100.00),\n (8,  'Beta Pack', '2025-09-27',  900.00),\n (9,  'Alpha Kit', '2025-11-11', 1400.00),\n (10, 'Alpha Kit', '2025-12-02',  600.00);\n",
     "solution": "\nSELECT product,\n       SUM(CASE WHEN strftime('%m', sale_date) IN ('01','02','03') THEN amount ELSE 0 END) AS q1,\n       SUM(CASE WHEN strftime('%m', sale_date) IN ('04','05','06') THEN amount ELSE 0 END) AS q2,\n       SUM(CASE WHEN strftime('%m', sale_date) IN ('07','08','09') THEN amount ELSE 0 END) AS q3,\n       SUM(CASE WHEN strftime('%m', sale_date) IN ('10','11','12') THEN amount ELSE 0 END) AS q4\nFROM sales\nGROUP BY product\nORDER BY product;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "m16",
     "schema": "\nCREATE TABLE products (\n    product_id INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL\n);\nCREATE TABLE price_history (\n    change_id  INTEGER PRIMARY KEY,\n    product_id INTEGER NOT NULL,\n    price      REAL NOT NULL,\n    changed_at TEXT NOT NULL\n);\nINSERT INTO products VALUES\n (1, 'Trailrunner Shoes'),\n (2, 'City Backpack'),\n (3, 'Thermal Bottle'),\n (4, 'Rain Jacket');\nINSERT INTO price_history VALUES\n (1,  1, 120.00, '2025-01-10'),\n (2,  1, 110.00, '2025-03-02'),\n (3,  1,  95.00, '2025-05-15'),\n (4,  2,  60.00, '2025-01-12'),\n (5,  2,  75.00, '2025-04-20'),\n (6,  3,  25.00, '2025-02-01'),\n (7,  3,  25.00, '2025-03-18'),\n (8,  3,  22.00, '2025-06-01'),\n (9,  4,  80.00, '2025-02-14');\n",
     "solution": "\nWITH bounds AS (\n    SELECT DISTINCT\n           product_id,\n           FIRST_VALUE(price) OVER (PARTITION BY product_id ORDER BY changed_at)      AS first_price,\n           FIRST_VALUE(price) OVER (PARTITION BY product_id ORDER BY changed_at DESC) AS last_price\n    FROM price_history\n)\nSELECT p.name,\n       b.first_price,\n       b.last_price\nFROM bounds b\nJOIN products p ON p.product_id = b.product_id\nWHERE b.last_price < b.first_price;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "m17",
     "schema": "\nCREATE TABLE playbacks (\n    playback_id INTEGER PRIMARY KEY,\n    user_id     INTEGER NOT NULL,\n    platform    TEXT NOT NULL,    -- 'mobile', 'tv', 'web'\n    played_at   TEXT NOT NULL\n);\nINSERT INTO playbacks VALUES\n (1,  1, 'mobile', '2025-05-01'),\n (2,  1, 'tv',     '2025-05-02'),\n (3,  2, 'mobile', '2025-05-01'),\n (4,  2, 'mobile', '2025-05-03'),\n (5,  3, 'tv',     '2025-05-02'),\n (6,  3, 'web',    '2025-05-04'),\n (7,  4, 'mobile', '2025-05-03'),\n (8,  4, 'web',    '2025-05-04'),\n (9,  4, 'tv',     '2025-05-06'),\n (10, 5, 'web',    '2025-05-05'),\n (11, 6, 'tv',     '2025-05-05'),\n (12, 6, 'mobile', '2025-05-07'),\n (13, 6, 'tv',     '2025-05-08');\n",
     "solution": "\nSELECT user_id\nFROM playbacks\nWHERE platform IN ('mobile', 'tv')\nGROUP BY user_id\nHAVING COUNT(DISTINCT platform) = 2\nORDER BY user_id;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "m18",
     "schema": "\nCREATE TABLE products (\n    product_id INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL,\n    category   TEXT NOT NULL\n);\nCREATE TABLE order_items (\n    item_id    INTEGER PRIMARY KEY,\n    product_id INTEGER NOT NULL,\n    quantity   INTEGER NOT NULL,\n    unit_price REAL NOT NULL\n);\nINSERT INTO products VALUES\n (1, 'Oak Bookshelf',  'Furniture'),\n (2, 'Walnut Desk',    'Furniture'),\n (3, 'Linen Throw',    'Textiles'),\n (4, 'Wool Rug',       'Textiles'),\n (5, 'Velvet Cushion', 'Textiles');\nINSERT INTO order_items VALUES\n (1, 1, 2, 250.00),\n (2, 2, 1, 600.00),\n (3, 1, 1, 250.00),\n (4, 3, 4,  45.00),\n (5, 4, 1, 320.00),\n (6, 5, 5,  30.00),\n (7, 4, 1, 320.00),\n (8, 3, 2,  45.00);\n",
     "solution": "\nWITH revenue AS (\n    SELECT p.category,\n           p.name,\n           SUM(oi.quantity * oi.unit_price) AS revenue\n    FROM products p\n    JOIN order_items oi ON oi.product_id = p.product_id\n    GROUP BY p.product_id, p.category, p.name\n)\nSELECT category,\n       name,\n       revenue,\n       ROUND(100.0 * revenue / SUM(revenue) OVER (PARTITION BY category), 1)\n         AS category_share_pct\nFROM revenue\nORDER BY category, revenue DESC;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "h01",
     "schema": "\nCREATE TABLE logins (\n    login_id   INTEGER PRIMARY KEY,\n    user_id    INTEGER NOT NULL,\n    login_date TEXT NOT NULL\n);\nINSERT INTO logins VALUES\n (1,  1, '2025-04-01'),\n (2,  1, '2025-04-02'),\n (3,  1, '2025-04-02'),   -- duplicate day\n (4,  1, '2025-04-03'),\n (5,  1, '2025-04-07'),\n (6,  1, '2025-04-08'),\n (7,  2, '2025-04-01'),\n (8,  2, '2025-04-03'),\n (9,  2, '2025-04-05'),\n (10, 3, '2025-04-10'),\n (11, 3, '2025-04-11'),\n (12, 3, '2025-04-12'),\n (13, 3, '2025-04-13'),\n (14, 3, '2025-04-13'),   -- duplicate day\n (15, 3, '2025-04-14');\n",
     "solution": "\nWITH days AS (\n    SELECT DISTINCT user_id, login_date\n    FROM logins\n),\nanchored AS (\n    SELECT user_id,\n           login_date,\n           date(login_date,\n                '-' || ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY login_date) || ' day'\n           ) AS anchor\n    FROM days\n),\nstreaks AS (\n    SELECT user_id, anchor, COUNT(*) AS streak_len\n    FROM anchored\n    GROUP BY user_id, anchor\n)\nSELECT user_id, MAX(streak_len) AS longest_streak\nFROM streaks\nGROUP BY user_id\nORDER BY user_id;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "h02",
     "schema": "\nCREATE TABLE payments (\n    payment_id INTEGER PRIMARY KEY,\n    paid_at    TEXT NOT NULL,\n    amount     REAL NOT NULL\n);\nINSERT INTO payments VALUES\n (1,  '2025-01-08', 4200.00),\n (2,  '2025-01-19', 3100.00),\n (3,  '2025-01-27', 1850.00),\n (4,  '2025-02-04', 5300.00),\n (5,  '2025-02-15', 2750.00),\n (6,  '2025-02-22', 4925.00),\n (7,  '2025-03-03', 3600.00),\n (8,  '2025-03-11', 2240.00),\n (9,  '2025-03-29', 3110.00),\n (10, '2025-04-06', 6480.00),\n (11, '2025-04-17', 5275.00),\n (12, '2025-04-25', 3945.00);\n",
     "solution": "\nWITH monthly AS (\n    SELECT strftime('%Y-%m', paid_at) AS month,\n           SUM(amount) AS revenue\n    FROM payments\n    GROUP BY month\n)\nSELECT month,\n       revenue,\n       ROUND(\n         100.0 * (revenue - LAG(revenue) OVER (ORDER BY month))\n               / LAG(revenue) OVER (ORDER BY month),\n         1\n       ) AS growth_pct\nFROM monthly\nORDER BY month;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "h03",
     "schema": "\nCREATE TABLE salaries (\n    record_id INTEGER PRIMARY KEY,\n    company   TEXT NOT NULL,\n    salary    INTEGER NOT NULL\n);\nINSERT INTO salaries VALUES\n (1,  'Acme',    60000),\n (2,  'Acme',    72000),\n (3,  'Acme',    85000),\n (4,  'Acme',    91000),\n (5,  'Acme',   130000),\n (6,  'Bolt',    54000),\n (7,  'Bolt',    66000),\n (8,  'Bolt',    78000),\n (9,  'Bolt',    98000),\n (10, 'Corex',   88000),\n (11, 'Corex',   92000),\n (12, 'Corex',  104000),\n (13, 'Corex',  115000),\n (14, 'Corex',  150000),\n (15, 'Corex',  162000);\n",
     "solution": "\nWITH ranked AS (\n    SELECT company,\n           salary,\n           ROW_NUMBER() OVER (PARTITION BY company ORDER BY salary) AS rn,\n           COUNT(*)     OVER (PARTITION BY company) AS cnt\n    FROM salaries\n)\nSELECT company,\n       AVG(salary) AS median_salary\nFROM ranked\nWHERE rn IN ((cnt + 1) / 2, (cnt + 2) / 2)\nGROUP BY company\nORDER BY company;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "h04",
     "schema": "\nCREATE TABLE pageviews (\n    view_id   INTEGER PRIMARY KEY,\n    user_id   INTEGER NOT NULL,\n    view_time TEXT NOT NULL    -- 'YYYY-MM-DD HH:MM:SS'\n);\nINSERT INTO pageviews VALUES\n (1,  1, '2025-05-01 09:00:00'),\n (2,  1, '2025-05-01 09:05:00'),\n (3,  1, '2025-05-01 09:20:00'),\n (4,  1, '2025-05-01 11:00:00'),\n (5,  1, '2025-05-01 11:10:00'),\n (6,  1, '2025-05-02 15:30:00'),\n (7,  2, '2025-05-01 10:00:00'),\n (8,  2, '2025-05-01 10:29:00'),\n (9,  2, '2025-05-01 10:58:00'),\n (10, 2, '2025-05-01 12:45:00'),\n (11, 3, '2025-05-03 08:15:00');\n",
     "solution": "\nWITH gaps AS (\n    SELECT user_id,\n           view_time,\n           (julianday(view_time) -\n            julianday(LAG(view_time) OVER (PARTITION BY user_id ORDER BY view_time))\n           ) * 24 * 60 AS gap_minutes\n    FROM pageviews\n)\nSELECT user_id,\n       SUM(CASE WHEN gap_minutes IS NULL OR gap_minutes > 30 THEN 1 ELSE 0 END) AS sessions\nFROM gaps\nGROUP BY user_id\nORDER BY user_id;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "h05",
     "schema": "\nCREATE TABLE users (\n    user_id     INTEGER PRIMARY KEY,\n    signup_date TEXT NOT NULL\n);\nCREATE TABLE activity (\n    activity_id   INTEGER PRIMARY KEY,\n    user_id       INTEGER NOT NULL,\n    activity_date TEXT NOT NULL\n);\nINSERT INTO users VALUES\n (1, '2025-06-01'),\n (2, '2025-06-01'),\n (3, '2025-06-01'),\n (4, '2025-06-02'),\n (5, '2025-06-02'),\n (6, '2025-06-03'),\n (7, '2025-06-03'),\n (8, '2025-06-03'),\n (9, '2025-06-03');\nINSERT INTO activity VALUES\n (1,  1, '2025-06-01'),\n (2,  1, '2025-06-02'),\n (3,  1, '2025-06-02'),   -- same user, same day: must count once\n (4,  2, '2025-06-02'),\n (5,  3, '2025-06-04'),   -- came back, but not on day 1\n (6,  4, '2025-06-03'),\n (7,  5, '2025-06-05'),\n (8,  6, '2025-06-04'),\n (9,  7, '2025-06-04'),\n (10, 7, '2025-06-04'),   -- duplicate again\n (11, 8, '2025-06-06'),\n (12, 9, '2025-06-04');\n",
     "solution": "\nWITH day1 AS (\n    SELECT DISTINCT user_id, activity_date\n    FROM activity\n)\nSELECT u.signup_date,\n       COUNT(*) AS signups,\n       ROUND(\n         100.0 * SUM(CASE WHEN d.user_id IS NOT NULL THEN 1 ELSE 0 END) / COUNT(*),\n         1\n       ) AS d1_retention_pct\nFROM users u\nLEFT JOIN day1 d\n  ON d.user_id = u.user_id\n AND d.activity_date = date(u.signup_date, '+1 day')\nGROUP BY u.signup_date\nORDER BY u.signup_date;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "h06",
     "schema": "\nCREATE TABLE products (\n    product_id INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL,\n    category   TEXT NOT NULL\n);\nCREATE TABLE sales (\n    sale_id    INTEGER PRIMARY KEY,\n    product_id INTEGER NOT NULL,\n    amount     REAL NOT NULL\n);\nINSERT INTO products VALUES\n (1, 'Cloud Sofa',      'Furniture'),\n (2, 'Birch Side Table','Furniture'),\n (3, 'Loft Bed Frame',  'Furniture'),\n (4, 'Pine Wardrobe',   'Furniture'),\n (5, 'Halo Floor Lamp', 'Lighting'),\n (6, 'Dot Desk Lamp',   'Lighting'),\n (7, 'Ray Pendant',     'Lighting'),\n (8, 'Glow Sconce',     'Lighting'),\n (9, 'Nest Wool Rug',   'Lighting');\nINSERT INTO sales VALUES\n (1,  1, 3200.00),\n (2,  1, 2800.00),\n (3,  2,  450.00),\n (4,  2,  450.00),\n (5,  3, 1900.00),\n (6,  4,  900.00),   -- Furniture rank 4: ties with nothing, must be excluded\n (7,  5,  780.00),\n (8,  6,  340.00),\n (9,  7,  560.00),\n (10, 8,  340.00),   -- Glow Sconce ties Dot Desk Lamp at rank 3: both stay\n (11, 9,  120.00);\n",
     "solution": "\nWITH revenue AS (\n    SELECT p.category,\n           p.name AS product_name,\n           SUM(s.amount) AS revenue\n    FROM products p\n    JOIN sales s ON s.product_id = p.product_id\n    GROUP BY p.product_id, p.category, p.name\n),\nranked AS (\n    SELECT category,\n           product_name,\n           revenue,\n           DENSE_RANK() OVER (\n               PARTITION BY category\n               ORDER BY revenue DESC\n           ) AS rnk\n    FROM revenue\n)\nSELECT category, product_name, revenue\nFROM ranked\nWHERE rnk <= 3\nORDER BY category, revenue DESC, product_name;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "h07",
     "schema": "\nCREATE TABLE events (\n    event_id   INTEGER PRIMARY KEY,\n    user_id    INTEGER NOT NULL,\n    event_date TEXT NOT NULL\n);\nINSERT INTO events VALUES\n (1,  101, '2025-02-01'),\n (2,  102, '2025-02-01'),\n (3,  101, '2025-02-03'),\n (4,  103, '2025-02-03'),\n (5,  102, '2025-02-05'),\n (6,  104, '2025-02-05'),\n (7,  105, '2025-02-05'),\n (8,  101, '2025-02-08'),\n (9,  103, '2025-02-08'),\n (10, 106, '2025-02-09'),\n (11, 104, '2025-02-09'),\n (12, 101, '2025-02-12');\n",
     "solution": "\nWITH first_seen AS (\n    SELECT user_id, MIN(event_date) AS first_date\n    FROM events\n    GROUP BY user_id\n),\nnew_per_day AS (\n    SELECT first_date AS d, COUNT(*) AS new_users\n    FROM first_seen\n    GROUP BY first_date\n),\nall_dates AS (\n    SELECT DISTINCT event_date AS d\n    FROM events\n)\nSELECT a.d AS event_date,\n       SUM(COALESCE(n.new_users, 0)) OVER (ORDER BY a.d) AS cumulative_users\nFROM all_dates a\nLEFT JOIN new_per_day n ON n.d = a.d\nORDER BY a.d;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "h08",
     "schema": "\nCREATE TABLE daily_sales (\n    sale_date TEXT PRIMARY KEY,\n    revenue   REAL NOT NULL\n);\nINSERT INTO daily_sales VALUES\n ('2025-03-01', 1850.00),\n ('2025-03-02', 2100.00),\n ('2025-03-03', 1740.00),\n ('2025-03-04', 1995.00),\n ('2025-03-05', 2300.00),\n ('2025-03-06', 2650.00),\n ('2025-03-07', 2480.00),\n ('2025-03-08', 1900.00),\n ('2025-03-09', 2050.00),\n ('2025-03-10', 2210.00),\n ('2025-03-11', 1875.00),\n ('2025-03-12', 2425.00),\n ('2025-03-13', 2760.00),\n ('2025-03-14', 2590.00);\n",
     "solution": "\nWITH windowed AS (\n    SELECT sale_date,\n           AVG(revenue) OVER (\n               ORDER BY sale_date\n               ROWS BETWEEN 6 PRECEDING AND CURRENT ROW\n           ) AS avg7,\n           ROW_NUMBER() OVER (ORDER BY sale_date) AS rn\n    FROM daily_sales\n)\nSELECT sale_date,\n       ROUND(avg7, 2) AS rolling_avg_7d\nFROM windowed\nWHERE rn >= 7\nORDER BY sale_date;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "h09",
     "schema": "\nCREATE TABLE orders (\n    order_id    INTEGER PRIMARY KEY,\n    customer_id INTEGER NOT NULL,\n    amount      REAL NOT NULL\n);\nINSERT INTO orders VALUES\n (1,  1, 250.00), (2,  1, 130.00),\n (3,  2, 90.00),\n (4,  3, 480.00), (5,  3, 220.00), (6,  3, 310.00),\n (7,  4, 45.00),  (8,  4, 30.00),\n (9,  5, 660.00),\n (10, 6, 150.00), (11, 6, 95.00),\n (12, 7, 520.00), (13, 7, 410.00),\n (14, 8, 75.00),\n (15, 9, 320.00), (16, 9, 185.00),\n (17, 10, 28.00), (18, 10, 19.00),\n (19, 11, 740.00), (20, 11, 380.00),\n (21, 12, 210.00);\n",
     "solution": "\nWITH totals AS (\n    SELECT customer_id, SUM(amount) AS total_spend\n    FROM orders\n    GROUP BY customer_id\n),\ntiled AS (\n    SELECT total_spend,\n           NTILE(4) OVER (ORDER BY total_spend DESC) AS quartile\n    FROM totals\n)\nSELECT quartile,\n       COUNT(*) AS customers,\n       ROUND(AVG(total_spend), 2) AS avg_spend\nFROM tiled\nGROUP BY quartile\nORDER BY quartile;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "h10",
     "schema": "\nCREATE TABLE view_sessions (\n    session_id INTEGER PRIMARY KEY,\n    user_id    INTEGER NOT NULL,\n    start_min  INTEGER NOT NULL,\n    end_min    INTEGER NOT NULL\n);\nINSERT INTO view_sessions VALUES\n (1, 1, 10,  50),\n (2, 1, 40,  90),    -- overlaps previous\n (3, 1, 90,  120),   -- back-to-back: continuous\n (4, 1, 200, 230),\n (5, 2, 0,   60),\n (6, 2, 10,  30),    -- fully contained\n (7, 2, 100, 140),\n (8, 3, 15,  45),\n (9, 3, 50,  70),\n (10,3, 60,  65);    -- contained in previous\n",
     "solution": "\nWITH ordered AS (\n    SELECT user_id,\n           start_min,\n           end_min,\n           MAX(end_min) OVER (\n               PARTITION BY user_id\n               ORDER BY start_min, end_min\n               ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING\n           ) AS prev_max_end\n    FROM view_sessions\n),\nflagged AS (\n    SELECT user_id,\n           start_min,\n           end_min,\n           CASE WHEN prev_max_end IS NULL OR start_min > prev_max_end\n                THEN 1 ELSE 0 END AS is_new_island\n    FROM ordered\n),\nislands AS (\n    SELECT user_id,\n           start_min,\n           end_min,\n           SUM(is_new_island) OVER (\n               PARTITION BY user_id\n               ORDER BY start_min, end_min\n           ) AS island_id\n    FROM flagged\n)\nSELECT user_id,\n       SUM(island_end - island_start) AS total_minutes\nFROM (\n    SELECT user_id,\n           island_id,\n           MIN(start_min) AS island_start,\n           MAX(end_min)   AS island_end\n    FROM islands\n    GROUP BY user_id, island_id\n)\nGROUP BY user_id\nORDER BY user_id;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "h11",
     "schema": "\nCREATE TABLE employees (\n    emp_id     INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL,\n    manager_id INTEGER          -- NULL for the CEO\n);\nINSERT INTO employees VALUES\n (1, 'Priya Sharma', NULL),\n (2, 'Ben Carter',   1),\n (3, 'Olivia Stone', 1),\n (4, 'Marco Ruiz',   2),\n (5, 'Tina Wong',    2),\n (6, 'Felix Braun',  3),\n (7, 'Nora Quinn',   4),\n (8, 'Dev Anand',    4),\n (9, 'June Park',    6);\n",
     "solution": "\nWITH RECURSIVE org AS (\n    SELECT emp_id, name, 1 AS level\n    FROM employees\n    WHERE manager_id IS NULL\n\n    UNION ALL\n\n    SELECT e.emp_id, e.name, org.level + 1\n    FROM employees e\n    JOIN org ON e.manager_id = org.emp_id\n)\nSELECT name, level\nFROM org\nORDER BY level, name;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "h12",
     "schema": "\nCREATE TABLE shows (\n    show_date    TEXT PRIMARY KEY,\n    tickets_sold INTEGER NOT NULL,\n    capacity     INTEGER NOT NULL\n);\nINSERT INTO shows VALUES\n ('2025-06-01',  80, 100),\n ('2025-06-02', 100, 100),\n ('2025-06-03', 105, 100),\n ('2025-06-04', 100, 100),\n ('2025-06-05',  70, 100),\n ('2025-06-06', 100, 100),\n ('2025-06-07', 110, 100),\n ('2025-06-08',  95, 100),\n ('2025-06-09', 100, 100),\n ('2025-06-10', 120, 100),\n ('2025-06-11', 100, 100),\n ('2025-06-12', 101, 100);\n",
     "solution": "\nWITH sold_out AS (\n    SELECT show_date\n    FROM shows\n    WHERE tickets_sold >= capacity\n),\nanchored AS (\n    SELECT show_date,\n           date(show_date,\n                '-' || ROW_NUMBER() OVER (ORDER BY show_date) || ' day') AS anchor\n    FROM sold_out\n),\nruns AS (\n    SELECT anchor, COUNT(*) AS run_len\n    FROM anchored\n    GROUP BY anchor\n)\nSELECT a.show_date\nFROM anchored a\nJOIN runs r ON r.anchor = a.anchor\nWHERE r.run_len >= 3\nORDER BY a.show_date;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "h13",
     "schema": "\nCREATE TABLE events (\n    event_id   INTEGER PRIMARY KEY,\n    user_id    INTEGER NOT NULL,\n    event_type TEXT NOT NULL,    -- 'view', 'cart', 'purchase'\n    event_time TEXT NOT NULL\n);\nINSERT INTO events VALUES\n (1,  1, 'view',     '2025-05-01 10:00:00'),\n (2,  1, 'cart',     '2025-05-01 10:05:00'),\n (3,  1, 'purchase', '2025-05-01 10:20:00'),\n (4,  2, 'cart',     '2025-05-02 11:00:00'),\n (5,  2, 'view',     '2025-05-02 11:10:00'),\n (6,  2, 'purchase', '2025-05-02 11:30:00'),\n (7,  3, 'view',     '2025-05-03 09:15:00'),\n (8,  3, 'cart',     '2025-05-03 09:40:00'),\n (9,  4, 'purchase', '2025-05-04 08:00:00'),\n (10, 4, 'view',     '2025-05-04 08:30:00'),\n (11, 4, 'cart',     '2025-05-04 08:45:00'),\n (12, 5, 'view',     '2025-05-05 09:00:00'),\n (13, 5, 'view',     '2025-05-05 09:10:00'),\n (14, 5, 'cart',     '2025-05-05 09:30:00'),\n (15, 5, 'cart',     '2025-05-05 09:45:00'),\n (16, 5, 'purchase', '2025-05-05 09:50:00');\n",
     "solution": "\nWITH firsts AS (\n    SELECT user_id,\n           MIN(CASE WHEN event_type = 'view'     THEN event_time END) AS first_view,\n           MIN(CASE WHEN event_type = 'cart'     THEN event_time END) AS first_cart,\n           MIN(CASE WHEN event_type = 'purchase' THEN event_time END) AS first_purchase\n    FROM events\n    GROUP BY user_id\n)\nSELECT user_id\nFROM firsts\nWHERE first_view < first_cart\n  AND first_cart < first_purchase\nORDER BY user_id;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "h14",
     "schema": "\nCREATE TABLE customers (\n    customer_id INTEGER PRIMARY KEY,\n    name        TEXT NOT NULL\n);\nCREATE TABLE payments (\n    payment_id  INTEGER PRIMARY KEY,\n    customer_id INTEGER NOT NULL,\n    paid_at     TEXT NOT NULL,\n    amount      REAL NOT NULL\n);\nINSERT INTO customers VALUES\n (1, 'Aldo Reyes'),\n (2, 'Bea Tan'),\n (3, 'Cleo Marsh'),\n (4, 'Dmitri Volkov');\nINSERT INTO payments VALUES\n (1,  1, '2025-01-05', 120.00),\n (2,  1, '2025-01-22', 180.00),\n (3,  2, '2025-01-09', 250.00),\n (4,  3, '2025-01-30', 140.00),\n (5,  1, '2025-02-03', 200.00),\n (6,  2, '2025-02-11', 90.00),\n (7,  2, '2025-02-25', 110.00),\n (8,  3, '2025-02-14', 75.00),\n (9,  4, '2025-02-20', 125.00),\n (10, 2, '2025-03-08', 300.00),\n (11, 3, '2025-03-15', 220.00),\n (12, 4, '2025-03-19', 160.00),\n (13, 4, '2025-03-28', 140.00),\n (14, 1, '2025-03-31', 95.00);\n",
     "solution": "\nWITH monthly AS (\n    SELECT strftime('%Y-%m', p.paid_at) AS month,\n           c.name,\n           SUM(p.amount) AS monthly_spend\n    FROM payments p\n    JOIN customers c ON c.customer_id = p.customer_id\n    GROUP BY month, c.customer_id, c.name\n),\nranked AS (\n    SELECT month,\n           name,\n           monthly_spend,\n           RANK() OVER (PARTITION BY month ORDER BY monthly_spend DESC) AS rnk\n    FROM monthly\n)\nSELECT month, name, monthly_spend\nFROM ranked\nWHERE rnk = 1\nORDER BY month, name;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "ip01",
     "schema": "\nCREATE TABLE transactions (\n    txn_id      INTEGER PRIMARY KEY,\n    customer_id INTEGER NOT NULL,\n    txn_date    TEXT NOT NULL,  -- YYYY-MM-DD\n    amount      DECIMAL NOT NULL\n);\nINSERT INTO transactions VALUES\n (1, 101, '2024-01-15', 50.00),\n (2, 102, '2024-01-20', 75.50),\n (3, 103, '2024-01-25', 100.00),\n (4, 101, '2024-02-10', 60.00),\n (5, 102, '2024-02-18', 80.00),\n (6, 104, '2024-02-05', 45.00),\n (7, 101, '2024-03-12', 55.00),\n (8, 105, '2024-03-08', 90.00),\n (9, 102, '2024-03-20', 70.00),\n (10, 104, '2024-03-15', 50.00);\n",
     "solution": "\nWITH cohorts AS (\n    SELECT customer_id,\n           STRFTIME('%Y-%m', MIN(txn_date)) AS cohort_month,\n           STRFTIME('%Y-%m', txn_date) AS txn_month\n    FROM transactions\n    GROUP BY customer_id, txn_month\n)\nSELECT cohort_month,\n       (JULIANDAY(txn_month) - JULIANDAY(cohort_month)) / 30.5 AS months_active,\n       COUNT(DISTINCT CASE WHEN txn_month = cohort_month THEN customer_id END) AS cohort_size,\n       COUNT(DISTINCT customer_id) AS returning_customers,\n       ROUND(100.0 * COUNT(DISTINCT customer_id) / \n             COUNT(DISTINCT CASE WHEN txn_month = cohort_month THEN customer_id END), 1) AS retention_rate\nFROM cohorts\nWHERE txn_month >= cohort_month\nGROUP BY cohort_month, months_active\nORDER BY cohort_month, months_active;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "ip02",
     "schema": "\nCREATE TABLE employees (\n    emp_id     INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL,\n    department TEXT NOT NULL,\n    salary     INTEGER NOT NULL\n);\nINSERT INTO employees VALUES\n (1, 'Alice', 'Engineering', 95000),\n (2, 'Bob', 'Engineering', 105000),\n (3, 'Charlie', 'Engineering', 115000),\n (4, 'Dana', 'Sales', 60000),\n (5, 'Eve', 'Sales', 70000),\n (6, 'Frank', 'Sales', 80000),\n (7, 'Grace', 'Sales', 250000),\n (8, 'Henry', 'Marketing', 50000),\n (9, 'Iris', 'Marketing', 55000);\n",
     "solution": "\nWITH ranked AS (\n    SELECT department,\n           salary,\n           COUNT(*) OVER (PARTITION BY department) AS dept_count,\n           ROW_NUMBER() OVER (PARTITION BY department ORDER BY salary) AS row_num\n    FROM employees\n)\nSELECT department,\n       AVG(salary) AS median_salary\nFROM ranked\nWHERE row_num IN (CEIL(dept_count / 2.0), FLOOR(dept_count / 2.0) + 1)\nGROUP BY department\nORDER BY department;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "ip03",
     "schema": "\nCREATE TABLE user_activity (\n    user_id INTEGER NOT NULL,\n    activity_date TEXT NOT NULL,  -- YYYY-MM-DD\n    PRIMARY KEY (user_id, activity_date)\n);\nINSERT INTO user_activity VALUES\n (1, '2024-01-01'), (1, '2024-01-02'), (1, '2024-01-03'), (1, '2024-01-05'),\n (2, '2024-01-01'), (2, '2024-01-02'), (2, '2024-01-04'), (2, '2024-01-05'), (2, '2024-01-06'),\n (3, '2024-01-02'), (3, '2024-01-04'), (3, '2024-01-05');\n",
     "solution": "\nWITH gaps AS (\n    SELECT user_id,\n           activity_date,\n           JULIANDAY(activity_date) - ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY activity_date) AS gap\n    FROM user_activity\n),\nstreaks AS (\n    SELECT user_id,\n           MIN(activity_date) AS streak_start_date,\n           COUNT(*) AS streak_length,\n           ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY COUNT(*) DESC) AS rank_by_length\n    FROM gaps\n    GROUP BY user_id, gap\n)\nSELECT user_id, streak_start_date, streak_length\nFROM streaks\nWHERE rank_by_length = 1\nORDER BY user_id, streak_start_date;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "ip04",
     "schema": "\nCREATE TABLE drivers (\n    driver_id INTEGER PRIMARY KEY,\n    city      TEXT NOT NULL,\n    rating    DECIMAL NOT NULL\n);\nINSERT INTO drivers VALUES\n (1, 'NYC', 4.9), (2, 'NYC', 4.8), (3, 'NYC', 4.8), (4, 'NYC', 4.7),\n (5, 'LA', 4.95), (6, 'LA', 4.9), (7, 'LA', 4.85), (8, 'LA', 4.85);\n",
     "solution": "\nWITH ranked AS (\n    SELECT city,\n           driver_id,\n           rating,\n           DENSE_RANK() OVER (PARTITION BY city ORDER BY rating DESC) AS rnk\n    FROM drivers\n)\nSELECT city, driver_id, rating\nFROM ranked\nWHERE rnk <= 2\nORDER BY city, rating DESC;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "ip05",
     "schema": "\nCREATE TABLE sales (\n    product_id INTEGER NOT NULL,\n    sale_month TEXT NOT NULL,  -- YYYY-MM\n    revenue INTEGER NOT NULL,\n    PRIMARY KEY (product_id, sale_month)\n);\nINSERT INTO sales VALUES\n (1, '2024-01', 5000), (1, '2024-02', 4500), (1, '2024-03', 6000),\n (2, '2024-02', 8000), (2, '2024-03', 7500), (2, '2024-04', 9000);\n",
     "solution": "\nSELECT product_id,\n       sale_month AS month,\n       revenue,\n       SUM(revenue) OVER (PARTITION BY product_id ORDER BY sale_month) AS cumulative_revenue\nFROM sales\nORDER BY product_id, sale_month;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "ext01",
     "schema": "\nCREATE TABLE departments (\n    dept_id   INTEGER PRIMARY KEY,\n    dept_name TEXT NOT NULL\n);\nCREATE TABLE employees (\n    emp_id  INTEGER PRIMARY KEY,\n    name    TEXT NOT NULL,\n    salary  INTEGER NOT NULL,\n    dept_id INTEGER NOT NULL\n);\nINSERT INTO departments VALUES (1, 'Engineering'), (2, 'Sales');\nINSERT INTO employees VALUES\n (1, 'Alice', 100000, 1), (2, 'Bob', 90000, 1),\n (3, 'Charlie', 80000, 2), (4, 'Dana', 95000, 2);\n",
     "solution": "\nWITH max_salary AS (\n    SELECT dept_id, MAX(salary) AS max_sal\n    FROM employees\n    GROUP BY dept_id\n)\nSELECT e.emp_id, e.name, e.salary, d.dept_name\nFROM employees e\nJOIN departments d ON d.dept_id = e.dept_id\nJOIN max_salary m ON m.dept_id = e.dept_id AND m.max_sal = e.salary\nORDER BY d.dept_name;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "ext02",
     "schema": "\nCREATE TABLE customers (\n    cust_id INTEGER PRIMARY KEY,\n    name    TEXT NOT NULL\n);\nCREATE TABLE orders (\n    order_id INTEGER PRIMARY KEY,\n    cust_id  INTEGER NOT NULL,\n    amount   DECIMAL NOT NULL\n);\nINSERT INTO customers VALUES (1, 'Alice'), (2, 'Bob'), (3, 'Charlie');\nINSERT INTO orders VALUES\n (1, 1, 100), (2, 1, 200), (3, 2, 150), (4, 2, 50);\n",
     "solution": "\nSELECT c.cust_id, c.name, COUNT(o.order_id) AS order_count, SUM(o.amount) AS total_spent\nFROM customers c\nLEFT JOIN orders o ON c.cust_id = o.cust_id\nGROUP BY c.cust_id, c.name\nORDER BY c.name;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "sqlz01",
     "schema": "\nCREATE TABLE world (\n    name       TEXT PRIMARY KEY,\n    continent  TEXT,\n    area       BIGINT,\n    population BIGINT,\n    gdp        BIGINT\n);\nINSERT INTO world VALUES\n ('Afghanistan', 'Asia', 652230, 25500100, NULL),\n ('Albania', 'Europe', 28748, 2876591, 12960000000),\n ('Algeria', 'Africa', 2381741, 37900000, 188681000000),\n ('Andorra', 'Europe', 468, 78115, 3712000000),\n ('Angola', 'Africa', 1246700, 20609294, NULL),\n ('Brazil', 'South America', 8514877, 200566000, 1839758000000),\n ('Canada', 'North America', 9984670, 33679000, 1736436000000),\n ('China', 'Asia', 9596961, 1365444697, 10982084000000),\n ('India', 'Asia', 3287263, 1295291143, 2073543000000),\n ('Russia', 'Europe', 17125191, 146000000, 1583800000000);\n",
     "solution": "\nSELECT name, area\nFROM world\nWHERE area > 5000000 OR population > 250000000\nORDER BY name;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "sqlz02",
     "schema": "\nCREATE TABLE shipments (\n    shipment_id INTEGER PRIMARY KEY,\n    customer_id INTEGER,\n    volume_tons DECIMAL,\n    ship_date TEXT\n);\nINSERT INTO shipments VALUES\n (1, 101, 15.5, '2024-01-05'),\n (2, 102, 22.0, '2024-01-10'),\n (3, 101, 18.5, '2024-01-15'),\n (4, 103, 30.0, '2024-01-20'),\n (5, 102, 25.0, '2024-01-25'),\n (6, 104, 12.0, '2024-02-01');\n",
     "solution": "\nSELECT SUM(volume_tons) AS total_volume,\n       COUNT(DISTINCT customer_id) AS customer_count\nFROM shipments;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "sqlz03",
     "schema": "\nCREATE TABLE schools (\n    school_id INTEGER PRIMARY KEY,\n    school_name TEXT NOT NULL\n);\nCREATE TABLE matches (\n    match_id INTEGER PRIMARY KEY,\n    home_school_id INTEGER NOT NULL,\n    away_school_id INTEGER NOT NULL,\n    score TEXT NOT NULL\n);\nINSERT INTO schools VALUES\n (1, 'Lincoln High'),\n (2, 'Central Academy'),\n (3, 'North Valley'),\n (4, 'Riverside High');\nINSERT INTO matches VALUES\n (1, 1, 2, '3-1'),\n (2, 3, 4, '2-2'),\n (3, 1, 3, '1-0'),\n (4, 2, 4, '4-1');\n",
     "solution": "\nSELECT m.match_id,\n       h.school_name AS home_school,\n       a.school_name AS away_school,\n       m.score\nFROM matches m\nJOIN schools h ON m.home_school_id = h.school_id\nJOIN schools a ON m.away_school_id = a.school_id\nORDER BY m.match_id;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "sqlz04",
     "schema": "\nCREATE TABLE employees (\n    emp_id INTEGER PRIMARY KEY,\n    emp_name TEXT NOT NULL,\n    dept_id INTEGER\n);\nCREATE TABLE departments (\n    dept_id INTEGER PRIMARY KEY,\n    dept_name TEXT NOT NULL\n);\nINSERT INTO employees VALUES\n (1, 'Alice', 10),\n (2, 'Bob', 20),\n (3, 'Charlie', NULL),\n (4, 'Dana', 10),\n (5, 'Eve', NULL);\nINSERT INTO departments VALUES\n (10, 'Engineering'),\n (20, 'Sales'),\n (30, 'Marketing');\n",
     "solution": "\nSELECT e.emp_name,\n       d.dept_name\nFROM employees e\nLEFT JOIN departments d ON e.dept_id = d.dept_id\nORDER BY e.emp_name;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "sqlz05",
     "schema": "\nCREATE TABLE sales (\n    sale_id INTEGER PRIMARY KEY,\n    product_id INTEGER,\n    category TEXT,\n    amount DECIMAL\n);\nINSERT INTO sales VALUES\n (1, 101, 'Electronics', 30000),\n (2, 102, 'Electronics', 35000),\n (3, 103, 'Electronics', 20000),\n (4, 201, 'Books', 2500),\n (5, 202, 'Books', 3000),\n (6, 301, 'Clothing', 10000),\n (7, 302, 'Clothing', 15000),\n (8, 303, 'Clothing', 20000),\n (9, 304, 'Clothing', 10000),\n (10, 401, 'Toys', 50000),\n (11, 402, 'Toys', 30000);\n",
     "solution": "\nSELECT category,\n       SUM(amount) AS total_revenue\nFROM sales\nGROUP BY category\nHAVING SUM(amount) > 50000\nORDER BY total_revenue DESC;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "dbg01",
     "schema": "\nCREATE TABLE employees (\n    emp_id     INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL,\n    department TEXT NOT NULL,\n    salary     INTEGER NOT NULL\n);\nINSERT INTO employees VALUES\n (1, 'Alice',   'Engineering', 95000),\n (2, 'Bob',     'Engineering', 88000),\n (3, 'Carol',   'Marketing',   72000),\n (4, 'Dave',    'Engineering', 105000),\n (5, 'Eve',     'Marketing',   68000),\n (6, 'Frank',   'HR',          61000),\n (7, 'Grace',   'HR',          63000),\n (8, 'Hank',    'Engineering', 91000);\n",
     "solution": "\nSELECT department, COUNT(*) AS headcount\nFROM employees\nGROUP BY department\nORDER BY department;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "dbg02",
     "schema": "\nCREATE TABLE employees (\n    emp_id     INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL,\n    department TEXT NOT NULL,\n    salary     INTEGER NOT NULL\n);\nINSERT INTO employees VALUES\n (1, 'Alice',   'Engineering', 95000),\n (2, 'Bob',     'Engineering', 88000),\n (3, 'Carol',   'Marketing',   72000),\n (4, 'Dave',    'Engineering', 105000),\n (5, 'Eve',     'Marketing',   68000),\n (6, 'Frank',   'Finance',     84000),\n (7, 'Grace',   'Finance',     91000),\n (8, 'Hank',    'Engineering', 91000);\n",
     "solution": "\nSELECT department, AVG(salary) AS avg_salary\nFROM employees\nGROUP BY department\nHAVING AVG(salary) > 80000\nORDER BY avg_salary DESC;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "dbg03",
     "schema": "\nCREATE TABLE employees (\n    emp_id     INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL,\n    manager_id INTEGER    -- NULL means top-level (no manager)\n);\nINSERT INTO employees VALUES\n (1, 'Alice',   NULL),\n (2, 'Bob',     1),\n (3, 'Carol',   1),\n (4, 'Dave',    NULL),\n (5, 'Eve',     4),\n (6, 'Frank',   4);\n",
     "solution": "\nSELECT name, manager_id\nFROM employees\nWHERE manager_id IS NULL;\n",
-    "order_matters": false
+    "order_matters": false,
+    "tsql": false
   },
   {
     "id": "dbg04",
     "schema": "\nCREATE TABLE customers (\n    customer_id INTEGER PRIMARY KEY,\n    name        TEXT NOT NULL\n);\nCREATE TABLE orders (\n    order_id    INTEGER PRIMARY KEY,\n    customer_id INTEGER NOT NULL,\n    amount      REAL NOT NULL\n);\nINSERT INTO customers VALUES\n (1, 'Alice'), (2, 'Bob'), (3, 'Carol'),\n (4, 'Dave'),  (5, 'Eve'), (6, 'Frank');\nINSERT INTO orders VALUES\n (1, 1, 120.50),\n (2, 1, 89.00),\n (3, 3, 45.00),\n (4, 2, 200.00),\n (5, 3, 75.50);\n",
     "solution": "\nSELECT c.name, COUNT(o.order_id) AS order_count\nFROM customers c\nLEFT JOIN orders o ON c.customer_id = o.customer_id\nGROUP BY c.customer_id, c.name\nORDER BY c.name;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "dbg05",
     "schema": "\nCREATE TABLE employees (\n    emp_id     INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL,\n    manager_id INTEGER   -- NULL for top-level employees\n);\nINSERT INTO employees VALUES\n (1, 'Alice',   NULL),\n (2, 'Bob',     1),\n (3, 'Carol',   1),\n (4, 'Dave',    NULL),\n (5, 'Eve',     4),\n (6, 'Frank',   4),\n (7, 'Grace',   2);\n",
     "solution": "\nSELECT name\nFROM employees\nWHERE emp_id NOT IN (\n    SELECT manager_id FROM employees WHERE manager_id IS NOT NULL\n)\nORDER BY name;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "dbg06",
     "schema": "\nCREATE TABLE employees (\n    emp_id  INTEGER PRIMARY KEY,\n    name    TEXT NOT NULL,\n    salary  INTEGER NOT NULL\n);\nINSERT INTO employees VALUES\n (1, 'Alice',   95000),\n (2, 'Bob',     88000),\n (3, 'Carol',   72000),\n (4, 'Dave',   105000),\n (5, 'Eve',     68000),\n (6, 'Frank',  105000);\n",
     "solution": "\nSELECT name, salary,\n    RANK() OVER (ORDER BY salary DESC) AS salary_rank\nFROM employees\nORDER BY salary_rank;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "dbg07",
     "schema": "\nCREATE TABLE products (\n    product_id   INTEGER PRIMARY KEY,\n    product_name TEXT NOT NULL,\n    price        REAL NOT NULL\n);\nCREATE TABLE sales (\n    sale_id    INTEGER PRIMARY KEY,\n    product_id INTEGER NOT NULL,\n    amount     REAL NOT NULL,\n    sale_date  TEXT NOT NULL\n);\nINSERT INTO products VALUES\n (1, 'Laptop',   999.00),\n (2, 'Mouse',     29.99),\n (3, 'Keyboard',  79.00),\n (4, 'Monitor',  349.00);\nINSERT INTO sales VALUES\n (1, 1, 999.00, '2024-01-10'),\n (2, 2,  29.99, '2024-01-11'),\n (3, 3,  79.00, '2024-01-12'),\n (4, 4, 349.00, '2024-01-13'),\n (5, 1, 999.00, '2024-01-14'),\n (6, 2,  29.99, '2024-01-15');\n",
     "solution": "\nSELECT s.sale_id, p.product_name, s.amount\nFROM sales s\nJOIN products p ON s.product_id = p.product_id\nWHERE s.amount > 50\nORDER BY s.sale_id;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "dbg08",
     "schema": "\nCREATE TABLE employees (\n    emp_id    INTEGER PRIMARY KEY,\n    name      TEXT NOT NULL,\n    years_exp INTEGER NOT NULL\n);\nINSERT INTO employees VALUES\n (1, 'Alice',   8),\n (2, 'Bob',     3),\n (3, 'Carol',   1),\n (4, 'Dave',    6),\n (5, 'Eve',     2),\n (6, 'Frank',   0),\n (7, 'Grace',   5);\n",
     "solution": "\nSELECT name, years_exp,\n    CASE\n        WHEN years_exp >= 5 THEN 'Senior'\n        WHEN years_exp >= 2 THEN 'Mid'\n        ELSE 'Junior'\n    END AS level\nFROM employees\nORDER BY years_exp DESC;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "dbg09",
     "schema": "\nCREATE TABLE orders (\n    order_id   INTEGER PRIMARY KEY,\n    order_date TEXT NOT NULL,\n    amount     REAL NOT NULL\n);\nINSERT INTO orders VALUES\n (1, '2024-01-05',  120.00),\n (2, '2024-01-15',   89.50),\n (3, '2024-01-30',  200.00),\n (4, '2024-01-31',   55.00),\n (5, '2024-02-01',  310.00),\n (6, '2024-02-14',   45.00);\n",
     "solution": "\nSELECT order_id, order_date, amount\nFROM orders\nWHERE order_date BETWEEN '2024-01-01' AND '2024-01-31'\nORDER BY order_date;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
   },
   {
     "id": "dbg10",
     "schema": "\nCREATE TABLE customers (\n    customer_id INTEGER PRIMARY KEY,\n    name        TEXT NOT NULL\n);\nCREATE TABLE orders (\n    order_id    INTEGER PRIMARY KEY,\n    customer_id INTEGER NOT NULL,\n    order_date  TEXT NOT NULL\n);\nCREATE TABLE order_items (\n    item_id    INTEGER PRIMARY KEY,\n    order_id   INTEGER NOT NULL,\n    product_id INTEGER NOT NULL,\n    quantity   INTEGER NOT NULL\n);\nCREATE TABLE products (\n    product_id INTEGER PRIMARY KEY,\n    name       TEXT NOT NULL,\n    category   TEXT NOT NULL\n);\nINSERT INTO customers VALUES\n (1, 'Alice'), (2, 'Bob'), (3, 'Carol'), (4, 'Dave');\nINSERT INTO orders VALUES\n (1, 1, '2024-02-01'), (2, 1, '2024-03-10'),\n (3, 2, '2024-02-15'), (4, 3, '2024-01-20');\nINSERT INTO products VALUES\n (1, 'Laptop',   'electronics'),\n (2, 'T-Shirt',  'clothing'),\n (3, 'Phone',    'electronics'),\n (4, 'Headphones','electronics');\nINSERT INTO order_items VALUES\n (1, 1, 1, 1),\n (2, 1, 3, 2),\n (3, 2, 4, 1),\n (4, 3, 2, 3),\n (5, 4, 1, 1);\n",
     "solution": "\nSELECT DISTINCT c.name\nFROM customers c\nJOIN orders o      ON c.customer_id = o.customer_id\nJOIN order_items i ON o.order_id    = i.order_id\nJOIN products p    ON i.product_id  = p.product_id\nWHERE p.category = 'electronics'\nORDER BY c.name;\n",
-    "order_matters": true
+    "order_matters": true,
+    "tsql": false
+  },
+  {
+    "id": "m19",
+    "schema": "\nCREATE TABLE employees (\n    emp_id     INT PRIMARY KEY,\n    name       VARCHAR(100) NOT NULL,\n    department VARCHAR(100) NOT NULL,\n    salary     INT NOT NULL\n);\nINSERT INTO employees VALUES\n (1,  'Mona Diaz',      'Engineering', 155000),\n (2,  'Kyle Renner',    'Engineering', 148000),\n (3,  'Suki Ito',       'Engineering', 121000),\n (4,  'Ira Glass',      'Engineering', 104000),\n (5,  'Gail Strand',    'Sales',       118000),\n (6,  'Pat Boyle',      'Sales',        98000),\n (7,  'Ravi Kapoor',    'Sales',        87000),\n (8,  'Fern Ellis',     'Design',      112000),\n (9,  'Drew Holt',      'Design',      109000),\n (10, 'Lena Park',      'Design',       95000),\n (11, 'Omar Haddad',    'Finance',     132000),\n (12, 'Iris Chen',      'Finance',     126000);\n",
+    "solution": "\nSELECT name,\n       department,\n       salary,\n       NTILE(4) OVER (ORDER BY salary) AS quartile,\n       CASE NTILE(4) OVER (ORDER BY salary)\n           WHEN 1 THEN 'Bottom 25%'\n           WHEN 2 THEN 'Lower Mid'\n           WHEN 3 THEN 'Upper Mid'\n           ELSE        'Top 25%'\n       END AS salary_band\nFROM employees\nORDER BY salary DESC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m20",
+    "schema": "\nCREATE TABLE daily_revenue (\n    sale_date     DATE PRIMARY KEY,\n    daily_revenue DECIMAL(10,2) NOT NULL\n);\nINSERT INTO daily_revenue VALUES\n ('2025-01-01', 12400.00),\n ('2025-01-02',  9800.00),\n ('2025-01-03', 15200.00),\n ('2025-01-04', 11600.00),\n ('2025-01-05', 18900.00),\n ('2025-01-06', 14300.00),\n ('2025-01-07', 21000.00),\n ('2025-01-08', 16500.00);\n",
+    "solution": "\nSELECT sale_date,\n       daily_revenue,\n       ROUND(AVG(CAST(daily_revenue AS FLOAT))\n             OVER (ORDER BY sale_date ROWS BETWEEN 2 PRECEDING AND CURRENT ROW), 2)\n           AS rolling_avg_3d\nFROM daily_revenue\nORDER BY sale_date;\n",
+    "order_matters": true,
+    "tsql": true
+  },
+  {
+    "id": "m21",
+    "schema": "\nCREATE TABLE employees (\n    emp_id    INT PRIMARY KEY,\n    name      VARCHAR(100) NOT NULL,\n    hire_date DATE NOT NULL\n);\nINSERT INTO employees VALUES\n (1,  'Alice Wong',    '2024-01-15'),\n (2,  'Brian Shah',    '2024-01-22'),\n (3,  'Cara Müller',   '2024-02-10'),\n (4,  'Diego Lopez',   '2024-03-05'),\n (5,  'Eva Novak',     '2024-03-18'),\n (6,  'Felix Adeyemi', '2024-03-29'),\n (7,  'Grace Kim',     '2024-04-02'),\n (8,  'Hugo Ferreira', '2024-05-14'),\n (9,  'Isla Brennan',  '2024-05-20'),\n (10, 'Jiro Sato',     '2024-06-01');\n",
+    "solution": "\nWITH monthly AS (\n    SELECT FORMAT(hire_date, 'yyyy-MM') AS hire_month,\n           COUNT(*) AS new_hires\n    FROM employees\n    GROUP BY FORMAT(hire_date, 'yyyy-MM')\n)\nSELECT hire_month,\n       new_hires,\n       SUM(new_hires) OVER (ORDER BY hire_month\n                            ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)\n           AS cumulative_headcount\nFROM monthly\nORDER BY hire_month;\n",
+    "order_matters": true,
+    "tsql": true
+  },
+  {
+    "id": "m22",
+    "schema": "\nCREATE TABLE customers (\n    customer_id INT PRIMARY KEY,\n    name        VARCHAR(100) NOT NULL,\n    email       VARCHAR(100) NOT NULL,\n    signup_date DATE NOT NULL\n);\nCREATE TABLE orders (\n    order_id    INT PRIMARY KEY,\n    customer_id INT NOT NULL,\n    order_date  DATE NOT NULL,\n    amount      DECIMAL(10,2) NOT NULL\n);\nINSERT INTO customers VALUES\n (1, 'Alice Brown',   'alice@example.com',   '2024-01-10'),\n (2, 'Bob Chen',      'bob@example.com',     '2024-02-14'),\n (3, 'Clara Davis',   'clara@example.com',   '2024-03-01'),\n (4, 'Daniel Evans',  'daniel@example.com',  '2024-03-22'),\n (5, 'Elena Flores',  'elena@example.com',   '2024-04-05'),\n (6, 'Frank Garcia',  'frank@example.com',   '2024-04-18');\nINSERT INTO orders VALUES\n (101, 1, '2024-02-01', 59.99),\n (102, 1, '2024-04-10', 120.00),\n (103, 3, '2024-03-15', 34.50),\n (104, 5, '2024-05-02', 89.00);\n",
+    "solution": "\nSELECT c.customer_id, c.name, c.email\nFROM customers c\nLEFT JOIN orders o ON o.customer_id = c.customer_id\nWHERE o.order_id IS NULL\nORDER BY c.name;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m23",
+    "schema": "\nCREATE TABLE employees (\n    emp_id     INT PRIMARY KEY,\n    name       VARCHAR(100) NOT NULL,\n    department VARCHAR(100) NOT NULL,\n    manager_id INT\n);\nINSERT INTO employees VALUES\n (1,  'Sarah Lin',     'Executive',   NULL),\n (2,  'Tom Reyes',     'Engineering', 1),\n (3,  'Nadia Patel',   'Engineering', 2),\n (4,  'Leo Kwan',      'Engineering', 2),\n (5,  'Chloe Ortega',  'Sales',       1),\n (6,  'Marcus Webb',   'Sales',       5),\n (7,  'Priya Nair',    'Sales',       5),\n (8,  'Jin Park',      'Finance',     1),\n (9,  'Rosa Lima',     'Finance',     8);\n",
+    "solution": "\nSELECT e.name AS employee,\n       m.name AS manager,\n       e.department\nFROM employees e\nLEFT JOIN employees m ON m.emp_id = e.manager_id\nORDER BY e.department, e.name;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m24",
+    "schema": "\nCREATE TABLE orders (\n    order_id    INT PRIMARY KEY,\n    customer_id INT NOT NULL,\n    order_date  DATE NOT NULL,\n    amount      DECIMAL(10,2) NOT NULL\n);\nCREATE TABLE shipments (\n    shipment_id INT PRIMARY KEY,\n    order_id    INT NOT NULL,\n    shipped_at  DATE NOT NULL\n);\nINSERT INTO orders VALUES\n (1001, 1, '2025-02-01', 149.00),\n (1002, 2, '2025-02-03',  89.50),\n (1003, 1, '2025-02-05', 210.00),\n (1004, 3, '2025-02-07',  55.00),\n (1005, 4, '2025-02-08', 320.00),\n (1006, 2, '2025-02-10',  75.00);\nINSERT INTO shipments VALUES\n (9001, 1001, '2025-02-03'),\n (9002, 1002, '2025-02-06'),\n (9003, 1003, '2025-02-08');\n",
+    "solution": "\nSELECT o.order_id, o.customer_id, o.order_date, o.amount\nFROM orders o\nWHERE NOT EXISTS (\n    SELECT 1 FROM shipments s WHERE s.order_id = o.order_id\n)\nORDER BY o.order_date;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m25",
+    "schema": "\nCREATE TABLE order_items (\n    item_id    INT PRIMARY KEY,\n    order_id   INT NOT NULL,\n    product_id INT NOT NULL\n);\nINSERT INTO order_items VALUES\n (1,  101, 1), (2,  101, 2), (3,  101, 3),\n (4,  102, 1), (5,  102, 2), (6,  102, 4),\n (7,  103, 2), (8,  103, 3),\n (9,  104, 1), (10, 104, 2), (11, 104, 3),\n (12, 105, 1), (13, 105, 3),\n (14, 106, 3), (15, 106, 4);\n",
+    "solution": "\nSELECT a.product_id AS product_a,\n       b.product_id AS product_b,\n       COUNT(*) AS co_order_count\nFROM order_items a\nJOIN order_items b\n    ON b.order_id   = a.order_id\n   AND b.product_id > a.product_id\nGROUP BY a.product_id, b.product_id\nHAVING COUNT(*) >= 2\nORDER BY co_order_count DESC, product_a, product_b;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m26",
+    "schema": "\nCREATE TABLE orders (\n    order_id   INT PRIMARY KEY,\n    order_date DATE NOT NULL,\n    amount     DECIMAL(10,2) NOT NULL\n);\nINSERT INTO orders VALUES\n (1,  '2025-01-06', 34.50),\n (2,  '2025-01-06', 21.00),\n (3,  '2025-01-07', 88.00),\n (4,  '2025-01-08', 45.00),\n (5,  '2025-01-09', 62.50),\n (6,  '2025-01-10', 77.00),\n (7,  '2025-01-11', 110.00),\n (8,  '2025-01-12', 95.00),\n (9,  '2025-01-13', 40.00),\n (10, '2025-01-14', 130.00),\n (11, '2025-01-15', 58.00),\n (12, '2025-01-17', 72.00),\n (13, '2025-01-18', 115.00),\n (14, '2025-01-19', 48.00);\n",
+    "solution": "\nSELECT DATENAME(weekday, order_date)       AS day_of_week,\n       COUNT(*)                            AS total_orders,\n       SUM(amount)                         AS total_revenue\nFROM orders\nGROUP BY DATENAME(weekday, order_date),\n         DATEPART(weekday, order_date)\nORDER BY DATEPART(weekday, order_date);\n",
+    "order_matters": true,
+    "tsql": true
+  },
+  {
+    "id": "m27",
+    "schema": "\nCREATE TABLE events (\n    event_id   INT PRIMARY KEY,\n    user_id    INT NOT NULL,\n    event_type VARCHAR(20) NOT NULL,  -- 'free' or 'paid'\n    event_date DATE NOT NULL\n);\nINSERT INTO events VALUES\n (1,  101, 'free',  '2025-01-02'),\n (2,  101, 'paid',  '2025-01-05'),\n (3,  101, 'free',  '2025-01-10'),\n (4,  102, 'free',  '2025-01-03'),\n (5,  102, 'free',  '2025-01-08'),\n (6,  103, 'paid',  '2025-01-04'),\n (7,  103, 'paid',  '2025-01-09'),\n (8,  103, 'free',  '2025-01-12'),\n (9,  104, 'free',  '2025-01-06'),\n (10, 105, 'paid',  '2025-01-07');\n",
+    "solution": "\nSELECT user_id,\n       COUNT(CASE WHEN event_type = 'free' THEN 1 END) AS free_events,\n       COUNT(CASE WHEN event_type = 'paid' THEN 1 END) AS paid_events\nFROM events\nGROUP BY user_id\nHAVING COUNT(CASE WHEN event_type = 'free' THEN 1 END) > 0\n   AND COUNT(CASE WHEN event_type = 'paid' THEN 1 END) > 0\nORDER BY user_id;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m28",
+    "schema": "\nCREATE TABLE sales (\n    sale_id    INT PRIMARY KEY,\n    category   VARCHAR(50) NOT NULL,\n    revenue    DECIMAL(10,2) NOT NULL,\n    sale_date  DATE NOT NULL\n);\nINSERT INTO sales VALUES\n (1,  'Electronics', 4200.00, '2025-01-05'),\n (2,  'Electronics', 3100.00, '2025-01-12'),\n (3,  'Clothing',    1800.00, '2025-01-08'),\n (4,  'Clothing',    2200.00, '2025-01-15'),\n (5,  'Home',        1500.00, '2025-01-10'),\n (6,  'Home',         900.00, '2025-01-18'),\n (7,  'Sports',      1100.00, '2025-01-07'),\n (8,  'Sports',       700.00, '2025-01-20'),\n (9,  'Beauty',       600.00, '2025-01-09'),\n (10, 'Beauty',       400.00, '2025-01-22');\n",
+    "solution": "\nSELECT category,\n       SUM(revenue) AS category_revenue,\n       ROUND(SUM(revenue) * 100.0 / SUM(SUM(revenue)) OVER (), 2) AS pct_of_total\nFROM sales\nGROUP BY category\nORDER BY category_revenue DESC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m29",
+    "schema": "\nCREATE TABLE transactions (\n    txn_id      INT PRIMARY KEY,\n    merchant_id INT NOT NULL,\n    status      VARCHAR(20) NOT NULL,  -- 'success', 'failed', 'pending'\n    amount      DECIMAL(10,2) NOT NULL,\n    txn_date    DATE NOT NULL\n);\nINSERT INTO transactions VALUES\n (1,  10, 'success', 120.00, '2025-01-03'),\n (2,  10, 'success',  85.00, '2025-01-04'),\n (3,  10, 'failed',   60.00, '2025-01-04'),\n (4,  10, 'pending',  45.00, '2025-01-05'),\n (5,  20, 'success', 200.00, '2025-01-03'),\n (6,  20, 'failed',  150.00, '2025-01-04'),\n (7,  20, 'failed',   90.00, '2025-01-05'),\n (8,  20, 'failed',   70.00, '2025-01-06'),\n (9,  30, 'success',  55.00, '2025-01-03'),\n (10, 30, 'success',  40.00, '2025-01-05'),\n (11, 30, 'pending',  35.00, '2025-01-06');\n",
+    "solution": "\nSELECT merchant_id,\n       COUNT(CASE WHEN status = 'success' THEN 1 END) AS success_count,\n       COUNT(CASE WHEN status = 'failed'  THEN 1 END) AS failed_count,\n       COUNT(CASE WHEN status = 'pending' THEN 1 END) AS pending_count,\n       ROUND(COUNT(CASE WHEN status = 'failed' THEN 1 END) * 100.0 / COUNT(*), 2)\n           AS failure_rate_pct\nFROM transactions\nGROUP BY merchant_id\nORDER BY failure_rate_pct DESC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m30",
+    "schema": "\nCREATE TABLE orders (\n    order_id   INT PRIMARY KEY,\n    order_date DATE NOT NULL,\n    amount     DECIMAL(10,2) NOT NULL\n);\nINSERT INTO orders VALUES\n (1,  '2025-01-06', 50.00), (2,  '2025-01-07', 80.00), (3,  '2025-01-08', 60.00),\n (4,  '2025-01-13', 90.00), (5,  '2025-01-14', 40.00), (6,  '2025-01-15', 70.00), (7, '2025-01-16', 55.00),\n (8,  '2025-01-20', 110.00),(9,  '2025-01-21', 85.00), (10, '2025-01-22', 95.00),\n (11, '2025-01-27', 45.00), (12, '2025-01-28', 60.00), (13, '2025-01-29', 75.00), (14, '2025-01-30', 88.00), (15, '2025-01-31', 50.00);\n",
+    "solution": "\nWITH weekly AS (\n    SELECT DATEPART(year, order_date) AS yr,\n           DATEPART(week, order_date) AS wk,\n           COUNT(*) AS orders_this_week\n    FROM orders\n    GROUP BY DATEPART(year, order_date), DATEPART(week, order_date)\n),\nwith_lag AS (\n    SELECT yr, wk, orders_this_week,\n           LAG(orders_this_week) OVER (ORDER BY yr, wk) AS orders_last_week\n    FROM weekly\n)\nSELECT yr, wk, orders_this_week, orders_last_week,\n       orders_this_week - orders_last_week AS wow_change\nFROM with_lag\nWHERE orders_last_week IS NOT NULL\nORDER BY yr, wk;\n",
+    "order_matters": true,
+    "tsql": true
+  },
+  {
+    "id": "m31",
+    "schema": "\nCREATE TABLE orders (\n    order_id    INT PRIMARY KEY,\n    customer_id INT NOT NULL,\n    order_date  DATE NOT NULL,\n    amount      DECIMAL(10,2) NOT NULL\n);\nINSERT INTO orders VALUES\n (1,  1, '2025-01-05', 80.00),\n (2,  1, '2025-01-18', 120.00),\n (3,  1, '2025-02-10', 95.00),\n (4,  2, '2025-01-09', 45.00),\n (5,  2, '2025-01-22', 60.00),\n (6,  3, '2025-01-15', 200.00),\n (7,  3, '2025-02-02', 175.00),\n (8,  3, '2025-02-20', 310.00),\n (9,  4, '2025-01-28', 55.00);\n",
+    "solution": "\nWITH ordered AS (\n    SELECT customer_id,\n           order_date,\n           LAG(order_date) OVER (PARTITION BY customer_id ORDER BY order_date) AS prev_order_date\n    FROM orders\n)\nSELECT customer_id,\n       order_date,\n       prev_order_date,\n       DATEDIFF(day, prev_order_date, order_date) AS days_since_last_order\nFROM ordered\nWHERE prev_order_date IS NOT NULL\nORDER BY customer_id, order_date;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m32",
+    "schema": "\nCREATE TABLE customers (\n    customer_id INT PRIMARY KEY,\n    name        VARCHAR(100) NOT NULL\n);\nCREATE TABLE orders (\n    order_id    INT PRIMARY KEY,\n    customer_id INT NOT NULL,\n    order_date  DATE NOT NULL,\n    amount      DECIMAL(10,2) NOT NULL\n);\nINSERT INTO customers VALUES (1,'Rosa Linden'),(2,'Max Okada'),(3,'Ines Farah'),(4,'Coby Mitchell');\nINSERT INTO orders VALUES\n (1, 1, '2025-01-15',  89.00),\n (2, 2, '2025-01-28', 134.00),\n (3, 1, '2025-02-03',  55.00),\n (4, 3, '2025-02-10', 210.00),\n (5, 4, '2025-02-14',  77.00),\n (6, 2, '2025-02-18',  92.00),\n (7, 1, '2025-02-22', 145.00),\n (8, 3, '2025-02-27',  38.00),\n (9, 4, '2025-03-01',  60.00);\n",
+    "solution": "\nSELECT o.order_id,\n       c.name AS customer_name,\n       o.order_date,\n       o.amount\nFROM orders o\nJOIN customers c ON c.customer_id = o.customer_id\nWHERE o.order_date >= DATEADD(day, -30, CAST('2025-03-01' AS DATE))\nORDER BY o.order_date DESC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m33",
+    "schema": "\nCREATE TABLE customers (\n    customer_id INT PRIMARY KEY,\n    name        VARCHAR(100) NOT NULL,\n    birth_date  DATE NOT NULL\n);\nCREATE TABLE orders (\n    order_id    INT PRIMARY KEY,\n    customer_id INT NOT NULL,\n    order_date  DATE NOT NULL\n);\nINSERT INTO customers VALUES\n (1, 'Liam Torres',    '1998-06-14'),\n (2, 'Ava Okafor',     '1985-11-30'),\n (3, 'Noah Williams',  '2000-03-22'),\n (4, 'Emma Suzuki',    '1992-08-05'),\n (5, 'Oliver Reyes',   '1978-01-17');\nINSERT INTO orders VALUES\n (1, 1, '2024-07-10'),\n (2, 1, '2024-09-15'),\n (3, 2, '2024-01-05'),\n (4, 3, '2024-04-20'),\n (5, 4, '2024-03-01'),\n (6, 4, '2024-11-11'),\n (7, 5, '2024-06-30');\n",
+    "solution": "\nSELECT c.name,\n       c.birth_date,\n       MIN(o.order_date) AS first_purchase_date,\n       DATEDIFF(year, c.birth_date, MIN(o.order_date)) AS age_at_first_purchase\nFROM customers c\nJOIN orders o ON o.customer_id = c.customer_id\nGROUP BY c.customer_id, c.name, c.birth_date\nORDER BY age_at_first_purchase;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m34",
+    "schema": "\nCREATE TABLE orders (\n    order_id    INT PRIMARY KEY,\n    customer_id INT NOT NULL,\n    order_date  DATE NOT NULL,\n    amount      DECIMAL(10,2) NOT NULL\n);\nINSERT INTO orders VALUES\n (1,  1, '2025-01-10', 120.00),\n (2,  1, '2025-02-14',  88.50),\n (3,  1, '2025-02-14', 200.00),\n (4,  2, '2025-01-22',  45.00),\n (5,  2, '2025-02-05',  60.00),\n (6,  3, '2025-01-30', 310.00),\n (7,  4, '2025-02-18',  75.00),\n (8,  4, '2025-01-05',  90.00);\n",
+    "solution": "\nWITH ranked AS (\n    SELECT customer_id, order_id, order_date, amount,\n           ROW_NUMBER() OVER (\n               PARTITION BY customer_id\n               ORDER BY order_date DESC, order_id DESC\n           ) AS rn\n    FROM orders\n)\nSELECT customer_id, order_id, order_date, amount\nFROM ranked\nWHERE rn = 1\nORDER BY order_date DESC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m35",
+    "schema": "\nCREATE TABLE users (\n    user_id    INT PRIMARY KEY,\n    email      VARCHAR(100) NOT NULL,\n    name       VARCHAR(100) NOT NULL,\n    created_at DATE NOT NULL\n);\nINSERT INTO users VALUES\n (1,  'alice@acme.com',  'Alice A', '2024-01-10'),\n (2,  'bob@acme.com',    'Bob B',   '2024-02-05'),\n (3,  'alice@acme.com',  'Alice Z', '2024-03-15'),\n (4,  'carol@acme.com',  'Carol C', '2024-01-22'),\n (5,  'bob@acme.com',    'Bob Q',   '2024-04-01'),\n (6,  'dave@acme.com',   'Dave D',  '2024-02-28'),\n (7,  'alice@acme.com',  'Alice M', '2024-05-09');\n",
+    "solution": "\nWITH ranked AS (\n    SELECT user_id, email, created_at,\n           ROW_NUMBER() OVER (PARTITION BY email ORDER BY created_at, user_id) AS rn\n    FROM users\n)\nSELECT user_id, email, created_at\nFROM ranked\nWHERE rn = 1\nORDER BY email;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m36",
+    "schema": "\nCREATE TABLE customer_history (\n    history_id  INT PRIMARY KEY,\n    customer_id INT NOT NULL,\n    name        VARCHAR(100) NOT NULL,\n    plan_tier   VARCHAR(50) NOT NULL,\n    valid_from  DATE NOT NULL,\n    valid_to    DATE\n);\nINSERT INTO customer_history VALUES\n (1, 1, 'Alice',  'free',       '2024-01-01', '2024-06-01'),\n (2, 1, 'Alice',  'standard',   '2024-06-01', '2024-11-01'),\n (3, 1, 'Alice',  'premium',    '2024-11-01', NULL),\n (4, 2, 'Bob',    'free',       '2024-03-01', '2024-09-01'),\n (5, 2, 'Bob',    'standard',   '2024-09-01', NULL),\n (6, 3, 'Carol',  'premium',    '2024-02-01', NULL);\n",
+    "solution": "\nSELECT customer_id, name, plan_tier, valid_from\nFROM customer_history\nWHERE valid_to IS NULL\nORDER BY customer_id;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m37",
+    "schema": "\nCREATE TABLE logins (\n    login_id   INT PRIMARY KEY,\n    user_id    INT NOT NULL,\n    login_date DATE NOT NULL\n);\nINSERT INTO logins VALUES\n (1,  1, '2025-01-10'), (2,  1, '2025-01-11'), (3,  1, '2025-01-12'),\n (4,  1, '2025-01-13'), (5,  1, '2025-01-14'),\n (6,  2, '2025-01-08'), (7,  2, '2025-01-09'),\n (8,  2, '2025-01-12'), (9,  2, '2025-01-13'), (10, 2, '2025-01-14'),\n (11, 3, '2025-01-01'), (12, 3, '2025-01-02'), (13, 3, '2025-01-14');\n",
+    "solution": "\nWITH daily AS (\n    SELECT DISTINCT user_id, login_date FROM logins\n),\nanchored AS (\n    SELECT user_id, login_date,\n           DATEDIFF(day, '2000-01-01', login_date)\n               - ROW_NUMBER() OVER (PARTITION BY user_id ORDER BY login_date) AS grp\n    FROM daily\n),\nislands AS (\n    SELECT user_id, grp,\n           MIN(login_date) AS streak_start,\n           MAX(login_date) AS streak_end,\n           COUNT(*)        AS streak_len\n    FROM anchored\n    GROUP BY user_id, grp\n),\nlast_login AS (\n    SELECT user_id, MAX(login_date) AS last_date FROM daily GROUP BY user_id\n)\nSELECT i.user_id, i.streak_start, i.streak_end, i.streak_len AS current_streak\nFROM islands i\nJOIN last_login l ON l.user_id = i.user_id AND l.last_date = i.streak_end\nORDER BY current_streak DESC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m38",
+    "schema": "\nCREATE TABLE daily_sales (\n    sale_date DATE PRIMARY KEY,\n    revenue   DECIMAL(10,2) NOT NULL\n);\nINSERT INTO daily_sales VALUES\n ('2025-01-01', 1200.00),\n ('2025-01-02',  980.00),\n ('2025-01-04', 1500.00),\n ('2025-01-05', 1100.00),\n ('2025-01-08',  870.00),\n ('2025-01-09', 2100.00),\n ('2025-01-10',  960.00);\n",
+    "solution": "\nWITH bounds AS (\n    SELECT MIN(sale_date) AS start_date, MAX(sale_date) AS end_date FROM daily_sales\n),\nspine AS (\n    SELECT DATEADD(day, n.number, b.start_date) AS dt\n    FROM bounds b\n    CROSS JOIN (\n        SELECT TOP 1000 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) - 1 AS number\n        FROM sys.all_objects\n    ) n\n    WHERE DATEADD(day, n.number, b.start_date) <= b.end_date\n)\nSELECT spine.dt AS missing_date\nFROM spine\nLEFT JOIN daily_sales ds ON ds.sale_date = spine.dt\nWHERE ds.sale_date IS NULL\nORDER BY missing_date;\n",
+    "order_matters": true,
+    "tsql": true
+  },
+  {
+    "id": "m39",
+    "schema": "\nCREATE TABLE users (\n    user_id    INT PRIMARY KEY,\n    signup_date DATE NOT NULL\n);\nCREATE TABLE events (\n    event_id   INT PRIMARY KEY,\n    user_id    INT NOT NULL,\n    event_date DATE NOT NULL\n);\nINSERT INTO users VALUES\n (1,'2025-01-01'),(2,'2025-01-01'),(3,'2025-01-01'),(4,'2025-01-01'),\n (5,'2025-01-02'),(6,'2025-01-02'),(7,'2025-01-02'),\n (8,'2025-01-03'),(9,'2025-01-03'),(10,'2025-01-03');\nINSERT INTO events VALUES\n (1,1,'2025-01-04'),(2,2,'2025-01-07'),(3,4,'2025-01-06'),\n (4,5,'2025-01-05'),(5,6,'2025-01-09'),\n (6,8,'2025-01-05'),(7,9,'2025-01-10'),(8,10,'2025-01-03');\n",
+    "solution": "\nWITH cohort AS (\n    SELECT u.user_id, u.signup_date,\n           MAX(CASE WHEN DATEDIFF(day, u.signup_date, e.event_date) BETWEEN 1 AND 7 THEN 1 ELSE 0 END)\n               AS retained_d7\n    FROM users u\n    LEFT JOIN events e ON e.user_id = u.user_id\n    GROUP BY u.user_id, u.signup_date\n)\nSELECT signup_date,\n       COUNT(*) AS cohort_size,\n       SUM(retained_d7) AS retained_d7,\n       ROUND(SUM(retained_d7) * 100.0 / COUNT(*), 2) AS retention_pct\nFROM cohort\nGROUP BY signup_date\nORDER BY signup_date;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m40",
+    "schema": "\nCREATE TABLE events (\n    event_id   INT PRIMARY KEY,\n    user_id    INT NOT NULL,\n    event_date DATE NOT NULL\n);\nINSERT INTO events VALUES\n (1,101,'2025-01-06'),(2,102,'2025-01-07'),(3,101,'2025-01-08'),(4,103,'2025-01-09'),\n (5,101,'2025-01-13'),(6,104,'2025-01-14'),(7,102,'2025-01-15'),(8,103,'2025-01-16'),(9,105,'2025-01-16'),\n (10,101,'2025-01-20'),(11,106,'2025-01-21'),(12,104,'2025-01-22'),\n (13,102,'2025-01-27'),(14,101,'2025-01-28'),(15,107,'2025-01-29'),(16,105,'2025-01-30');\n",
+    "solution": "\nSELECT DATEPART(year, event_date) AS yr,\n       DATEPART(week, event_date) AS wk,\n       COUNT(DISTINCT user_id)    AS wau\nFROM events\nGROUP BY DATEPART(year, event_date), DATEPART(week, event_date)\nORDER BY yr, wk;\n",
+    "order_matters": true,
+    "tsql": true
+  },
+  {
+    "id": "m41",
+    "schema": "\nCREATE TABLE employees (\n    emp_id     INT PRIMARY KEY,\n    name       VARCHAR(100) NOT NULL,\n    department VARCHAR(100) NOT NULL,\n    manager_id INT,\n    hire_date  DATE NOT NULL\n);\nINSERT INTO employees VALUES\n (1, 'Sarah Lin',    'Executive',   NULL, '2018-03-01'),\n (2, 'Tom Reyes',    'Engineering', 1,    '2019-07-15'),\n (3, 'Nadia Patel',  'Engineering', 2,    '2020-01-10'),\n (4, 'Chloe Ortega', 'Sales',       1,    '2019-11-20'),\n (5, 'Marcus Webb',  'Sales',       4,    '2021-05-03'),\n (6, 'Jin Park',     'Finance',     NULL, '2018-09-01'),\n (7, 'Rosa Lima',    'Finance',     6,    '2022-02-14');\n",
+    "solution": "\nSELECT emp_id, name, department, hire_date\nFROM employees\nWHERE manager_id IS NULL\nORDER BY name;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m42",
+    "schema": "\nCREATE TABLE customers (\n    customer_id  INT PRIMARY KEY,\n    name         VARCHAR(100) NOT NULL,\n    mobile_phone VARCHAR(20),\n    home_phone   VARCHAR(20),\n    work_phone   VARCHAR(20),\n    email        VARCHAR(100)\n);\nINSERT INTO customers VALUES\n (1, 'Alice Brown',  '555-0101', NULL,       NULL,       'alice@co.com'),\n (2, 'Bob Chen',     NULL,       '555-0202', NULL,       'bob@co.com'),\n (3, 'Clara Davis',  NULL,       NULL,       '555-0303', 'clara@co.com'),\n (4, 'Daniel Evans', NULL,       NULL,       NULL,       'daniel@co.com'),\n (5, 'Elena Flores', '555-0505', '555-0506', '555-0507', 'elena@co.com');\n",
+    "solution": "\nSELECT customer_id, name,\n       COALESCE(mobile_phone, home_phone, work_phone, email) AS preferred_contact,\n       CASE\n           WHEN mobile_phone IS NOT NULL THEN 'mobile'\n           WHEN home_phone   IS NOT NULL THEN 'home'\n           WHEN work_phone   IS NOT NULL THEN 'work'\n           ELSE 'email'\n       END AS contact_type\nFROM customers\nORDER BY name;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m43",
+    "schema": "\nCREATE TABLE orders (\n    order_id    INT PRIMARY KEY,\n    customer_id INT NOT NULL,\n    order_date  DATE NOT NULL,\n    street      VARCHAR(200),\n    city        VARCHAR(100),\n    zip_code    VARCHAR(10)\n);\nINSERT INTO orders VALUES\n (1, 1, '2025-01-05', '123 Main St',  'Austin',   '78701'),\n (2, 2, '2025-01-07', NULL,           'Denver',   '80201'),\n (3, 3, '2025-01-09', '456 Oak Ave',  NULL,       '90210'),\n (4, 4, '2025-01-10', '789 Pine Rd',  'Seattle',  NULL),\n (5, 5, '2025-01-12', NULL,           NULL,       '10001'),\n (6, 6, '2025-01-14', '321 Elm St',   'Chicago',  '60601');\n",
+    "solution": "\nSELECT order_id,\n       customer_id,\n       ISNULL(street,   '(missing)') AS street,\n       ISNULL(city,     '(missing)') AS city,\n       ISNULL(zip_code, '(missing)') AS zip_code\nFROM orders\nWHERE street IS NULL OR city IS NULL OR zip_code IS NULL\nORDER BY order_id;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m44",
+    "schema": "\nCREATE TABLE orders (\n    order_id   INT PRIMARY KEY,\n    order_date DATE NOT NULL\n);\nCREATE TABLE order_items (\n    item_id    INT PRIMARY KEY,\n    order_id   INT NOT NULL,\n    product_id INT NOT NULL,\n    quantity   INT NOT NULL\n);\nINSERT INTO orders VALUES (1001,'2025-01-05'),(1002,'2025-01-06'),(1003,'2025-01-07');\nINSERT INTO order_items VALUES\n (1, 1001, 101, 2),\n (2, 1001, 102, 1),\n (3, 1002, 103, 3),\n (4, 1004, 104, 1),\n (5, 1005, 101, 2),\n (6, 1003, 102, 1);\n",
+    "solution": "\nSELECT oi.item_id, oi.order_id, oi.product_id, oi.quantity\nFROM order_items oi\nLEFT JOIN orders o ON o.order_id = oi.order_id\nWHERE o.order_id IS NULL\nORDER BY oi.item_id;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "m45",
+    "schema": "\nCREATE TABLE accounts (\n    account_id   INT PRIMARY KEY,\n    name         VARCHAR(100) NOT NULL,\n    phone_number VARCHAR(20)\n);\nINSERT INTO accounts VALUES\n (1,  'Alice A',  '555-0101'),\n (2,  'Bob B',    '555-0202'),\n (3,  'Carol C',  '555-0101'),\n (4,  'Dave D',   '555-0303'),\n (5,  'Eve E',    '555-0202'),\n (6,  'Frank F',  '555-0101'),\n (7,  'Grace G',  '555-0404'),\n (8,  'Hank H',   NULL);\n",
+    "solution": "\nSELECT phone_number,\n       COUNT(*)  AS account_count,\n       STRING_AGG(CAST(account_id AS VARCHAR), ', ')\n           WITHIN GROUP (ORDER BY account_id) AS account_ids\nFROM accounts\nWHERE phone_number IS NOT NULL\nGROUP BY phone_number\nHAVING COUNT(*) > 1\nORDER BY account_count DESC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h15",
+    "schema": "\nCREATE TABLE product_sales (\n    sale_id   INT PRIMARY KEY,\n    category  VARCHAR(50) NOT NULL,\n    revenue   DECIMAL(10,2) NOT NULL,\n    sale_date DATE NOT NULL\n);\nINSERT INTO product_sales VALUES\n (1,'Electronics',4200.00,'2023-03-15'),(2,'Electronics',3800.00,'2023-09-20'),\n (3,'Electronics',5100.00,'2024-02-10'),(4,'Electronics',4600.00,'2024-11-05'),\n (5,'Clothing',1800.00,'2023-04-12'),(6,'Clothing',2200.00,'2023-10-08'),\n (7,'Clothing',2600.00,'2024-03-22'),(8,'Clothing',3100.00,'2024-08-17'),\n (9,'Home',1200.00,'2023-05-01'),(10,'Home',1400.00,'2023-12-15'),\n (11,'Home',1100.00,'2024-04-09'),(12,'Home',1900.00,'2024-09-30');\n",
+    "solution": "\nWITH yearly AS (\n    SELECT category,\n           YEAR(sale_date)  AS yr,\n           SUM(revenue)     AS annual_revenue\n    FROM product_sales\n    GROUP BY category, YEAR(sale_date)\n),\nwith_lag AS (\n    SELECT category, yr, annual_revenue,\n           LAG(annual_revenue) OVER (PARTITION BY category ORDER BY yr) AS prev_year_revenue\n    FROM yearly\n)\nSELECT category, yr, annual_revenue, prev_year_revenue,\n       ROUND((annual_revenue - prev_year_revenue) * 100.0\n             / NULLIF(prev_year_revenue, 0), 2) AS yoy_growth_pct\nFROM with_lag\nWHERE prev_year_revenue IS NOT NULL\nORDER BY category, yr;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h16",
+    "schema": "\nCREATE TABLE orders (\n    order_id    INT PRIMARY KEY,\n    customer_id INT NOT NULL,\n    amount      DECIMAL(10,2) NOT NULL,\n    order_date  DATE NOT NULL\n);\nINSERT INTO orders VALUES\n (1,101,50.00,'2025-01-01'),(2,101,80.00,'2025-01-05'),\n (3,102,200.00,'2025-01-02'),(4,102,150.00,'2025-01-08'),\n (5,103,30.00,'2025-01-03'),\n (6,104,500.00,'2025-01-04'),(7,104,450.00,'2025-01-09'),(8,104,380.00,'2025-01-12'),\n (9,105,25.00,'2025-01-05'),\n (10,106,90.00,'2025-01-06'),\n (11,107,310.00,'2025-01-07'),\n (12,108,15.00,'2025-01-08'),\n (13,109,700.00,'2025-01-09'),(14,109,620.00,'2025-01-14'),\n (15,110,40.00,'2025-01-10'),\n (16,111,180.00,'2025-01-11'),\n (17,112,22.00,'2025-01-12'),\n (18,113,850.00,'2025-01-13'),(19,113,920.00,'2025-01-16'),\n (20,114,60.00,'2025-01-14');\n",
+    "solution": "\nWITH customer_spend AS (\n    SELECT customer_id, SUM(amount) AS total_spent\n    FROM orders\n    GROUP BY customer_id\n),\ndeciled AS (\n    SELECT customer_id, total_spent,\n           NTILE(10) OVER (ORDER BY total_spent) AS decile\n    FROM customer_spend\n)\nSELECT ROUND(AVG(CASE WHEN decile = 10 THEN total_spent END), 2) AS avg_top_decile,\n       ROUND(AVG(CASE WHEN decile =  1 THEN total_spent END), 2) AS avg_bottom_decile,\n       ROUND(AVG(CASE WHEN decile = 10 THEN total_spent END)\n             / NULLIF(AVG(CASE WHEN decile = 1 THEN total_spent END), 0), 2) AS ratio\nFROM deciled;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h17",
+    "schema": "\nCREATE TABLE user_events (\n    event_id   INT PRIMARY KEY,\n    user_id    INT NOT NULL,\n    event_type VARCHAR(50) NOT NULL,\n    event_time VARCHAR(19) NOT NULL\n);\nINSERT INTO user_events VALUES\n (1, 1,'signup',   '2025-01-01 09:00:00'),\n (2, 1,'purchase', '2025-01-05 14:30:00'),\n (3, 1,'review',   '2025-01-20 11:00:00'),\n (4, 2,'signup',   '2025-01-03 08:00:00'),\n (5, 2,'purchase', '2025-01-03 18:00:00'),\n (6, 3,'signup',   '2025-01-10 10:00:00'),\n (7, 3,'view',     '2025-01-12 15:00:00'),\n (8, 3,'purchase', '2025-01-25 09:30:00'),\n (9, 3,'refund',   '2025-02-01 12:00:00');\n",
+    "solution": "\nWITH bounds AS (\n    SELECT DISTINCT\n           user_id,\n           FIRST_VALUE(event_type) OVER (PARTITION BY user_id ORDER BY event_time)\n               AS first_event,\n           FIRST_VALUE(event_time) OVER (PARTITION BY user_id ORDER BY event_time)\n               AS first_event_time,\n           FIRST_VALUE(event_type) OVER (PARTITION BY user_id ORDER BY event_time DESC)\n               AS last_event,\n           FIRST_VALUE(event_time) OVER (PARTITION BY user_id ORDER BY event_time DESC)\n               AS last_event_time\n    FROM user_events\n)\nSELECT user_id, first_event, first_event_time, last_event, last_event_time,\n       DATEDIFF(day, CAST(first_event_time AS DATE), CAST(last_event_time AS DATE))\n           AS active_days\nFROM bounds\nORDER BY active_days DESC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h18",
+    "schema": "\nCREATE TABLE friendships (\n    user_id   INT NOT NULL,\n    friend_id INT NOT NULL,\n    PRIMARY KEY (user_id, friend_id)\n);\nINSERT INTO friendships VALUES\n (1,2),(2,1),(1,3),(3,1),(2,4),(4,2),(3,5),(5,3),(4,5),(5,4),(5,6),(6,5);\n",
+    "solution": "\nWITH direct AS (\n    SELECT user_id, friend_id, 1 AS degree FROM friendships\n),\nsecond AS (\n    SELECT d1.user_id, d2.friend_id AS connection_id, 2 AS degree\n    FROM direct d1\n    JOIN direct d2 ON d2.user_id = d1.friend_id\n    WHERE d2.friend_id <> d1.user_id\n      AND NOT EXISTS (\n          SELECT 1 FROM direct df\n          WHERE df.user_id = d1.user_id AND df.friend_id = d2.friend_id\n      )\n)\nSELECT user_id, connection_id, MIN(degree) AS degree\nFROM second\nGROUP BY user_id, connection_id\nORDER BY user_id, degree, connection_id;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h19",
+    "schema": "\nCREATE TABLE components (\n    component_id   INT PRIMARY KEY,\n    component_name VARCHAR(100) NOT NULL,\n    parent_id      INT\n);\nINSERT INTO components VALUES\n (1, 'Bicycle',      NULL),\n (2, 'Frame',        1),\n (3, 'Wheels',       1),\n (4, 'Drivetrain',   1),\n (5, 'Fork',         2),\n (6, 'Seat Stay',    2),\n (7, 'Front Wheel',  3),\n (8, 'Rear Wheel',   3),\n (9, 'Chain',        4),\n (10,'Cassette',     4);\n",
+    "solution": "\nWITH bom AS (\n    SELECT component_id, component_name, parent_id,\n           1 AS level,\n           CAST(component_name AS VARCHAR(500)) AS path\n    FROM components\n    WHERE parent_id IS NULL\n    UNION ALL\n    SELECT c.component_id, c.component_name, c.parent_id,\n           b.level + 1,\n           CAST(b.path + ' > ' + c.component_name AS VARCHAR(500))\n    FROM components c\n    JOIN bom b ON b.component_id = c.parent_id\n)\nSELECT component_id, component_name, parent_id, level, path\nFROM bom\nORDER BY path;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h20",
+    "schema": "\nCREATE TABLE customers (customer_id INT PRIMARY KEY, name VARCHAR(100) NOT NULL);\nCREATE TABLE orders (order_id INT PRIMARY KEY, customer_id INT NOT NULL);\nCREATE TABLE order_tags (tag_id INT PRIMARY KEY, order_id INT NOT NULL, tag VARCHAR(50) NOT NULL);\nINSERT INTO customers VALUES (1,'Alice'),(2,'Bob'),(3,'Carol');\nINSERT INTO orders VALUES (101,1),(102,1),(103,2),(104,3);\nINSERT INTO order_tags VALUES\n (1,101,'urgent'),(2,101,'gift'),(3,101,'fragile'),\n (4,102,'urgent'),\n (5,103,'gift'),(6,103,'fragile');\n",
+    "solution": "\nSELECT c.customer_id,\n       c.name,\n       COUNT(o.order_id)          AS order_count_inflated,\n       COUNT(DISTINCT o.order_id) AS order_count_true,\n       CAST(COUNT(o.order_id) AS FLOAT)\n           / NULLIF(COUNT(DISTINCT o.order_id), 0) AS inflation_factor\nFROM customers c\nJOIN orders o     ON o.customer_id  = c.customer_id\nJOIN order_tags t ON t.order_id     = o.order_id\nGROUP BY c.customer_id, c.name\nHAVING COUNT(o.order_id) <> COUNT(DISTINCT o.order_id)\nORDER BY inflation_factor DESC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h21",
+    "schema": "\nCREATE TABLE users (\n    user_id    INT PRIMARY KEY,\n    channel    VARCHAR(50) NOT NULL,\n    signup_date DATE NOT NULL\n);\nCREATE TABLE events (\n    event_id   INT PRIMARY KEY,\n    user_id    INT NOT NULL,\n    event_type VARCHAR(50) NOT NULL,\n    event_date DATE NOT NULL\n);\nINSERT INTO users VALUES\n (1,'organic','2025-01-01'),(2,'organic','2025-01-01'),(3,'organic','2025-01-02'),\n (4,'paid_search','2025-01-01'),(5,'paid_search','2025-01-02'),(6,'paid_search','2025-01-03'),\n (7,'referral','2025-01-01'),(8,'referral','2025-01-02');\nINSERT INTO events VALUES\n (1,1,'purchase','2025-01-15'),(2,2,'view','2025-01-10'),\n (3,3,'purchase','2025-01-20'),\n (4,4,'purchase','2025-01-05'),(5,5,'purchase','2025-01-18'),(6,6,'view','2025-01-12'),\n (7,7,'purchase','2025-01-08'),(8,8,'purchase','2025-01-22');\n",
+    "solution": "\nWITH cohort AS (\n    SELECT u.user_id, u.channel,\n           MAX(CASE WHEN e.event_type = 'purchase'\n                     AND DATEDIFF(day, u.signup_date, e.event_date) BETWEEN 1 AND 30\n                    THEN 1 ELSE 0 END) AS converted\n    FROM users u\n    LEFT JOIN events e ON e.user_id = u.user_id\n    GROUP BY u.user_id, u.channel\n)\nSELECT channel,\n       COUNT(*) AS total_signups,\n       SUM(converted) AS conversions,\n       ROUND(SUM(converted) * 100.0 / COUNT(*), 2) AS conversion_rate_pct\nFROM cohort\nGROUP BY channel\nORDER BY conversion_rate_pct DESC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h22",
+    "schema": "\nCREATE TABLE orders (order_id INT PRIMARY KEY, customer_id INT NOT NULL);\nCREATE TABLE order_items (item_id INT PRIMARY KEY, order_id INT NOT NULL, product_id INT NOT NULL);\nCREATE TABLE products (product_id INT PRIMARY KEY, name VARCHAR(100) NOT NULL, category VARCHAR(50) NOT NULL);\nINSERT INTO products VALUES\n (1,'Canon EOS','Camera'),(2,'Sony Alpha','Camera'),\n (3,'Camera Bag','Accessory'),(4,'Memory Card','Accessory'),(5,'Tripod','Accessory'),\n (6,'Laptop','Electronics');\nINSERT INTO orders VALUES (101,1),(102,1),(103,2),(104,3),(105,4),(106,5);\nINSERT INTO order_items VALUES\n (1,101,1),(2,102,3),(3,102,4),\n (4,103,2),\n (5,104,1),(6,104,5),\n (7,105,2),\n (8,106,6);\n",
+    "solution": "\nWITH buyers AS (\n    SELECT o.customer_id,\n           MAX(CASE WHEN p.category = 'Camera'    THEN 1 ELSE 0 END) AS bought_camera,\n           MAX(CASE WHEN p.category = 'Accessory' THEN 1 ELSE 0 END) AS bought_accessory\n    FROM orders o\n    JOIN order_items oi ON oi.order_id    = o.order_id\n    JOIN products    p  ON p.product_id   = oi.product_id\n    GROUP BY o.customer_id\n)\nSELECT SUM(bought_camera) AS camera_buyers,\n       SUM(CASE WHEN bought_camera = 1 AND bought_accessory = 1 THEN 1 END) AS also_bought_accessory,\n       ROUND(SUM(CASE WHEN bought_camera = 1 AND bought_accessory = 1 THEN 1 END) * 100.0\n             / NULLIF(SUM(bought_camera), 0), 2) AS attachment_rate_pct\nFROM buyers;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h23",
+    "schema": "\nCREATE TABLE product_sales (\n    sale_id   INT PRIMARY KEY,\n    category  VARCHAR(50) NOT NULL,\n    revenue   DECIMAL(10,2) NOT NULL,\n    sale_date DATE NOT NULL\n);\nINSERT INTO product_sales VALUES\n (1,'Electronics',4200.00,'2025-01-10'),(2,'Electronics',3100.00,'2025-01-25'),\n (3,'Electronics',5800.00,'2025-02-12'),(4,'Electronics',4400.00,'2025-02-28'),\n (5,'Electronics',6100.00,'2025-03-15'),\n (6,'Clothing',1800.00,'2025-01-08'),(7,'Clothing',2500.00,'2025-02-14'),\n (8,'Clothing',2100.00,'2025-03-22');\n",
+    "solution": "\nWITH monthly AS (\n    SELECT category,\n           FORMAT(sale_date, 'yyyy-MM') AS month,\n           SUM(revenue) AS monthly_revenue\n    FROM product_sales\n    GROUP BY category, FORMAT(sale_date, 'yyyy-MM')\n),\nwith_prev AS (\n    SELECT category, month, monthly_revenue,\n           LAG(monthly_revenue) OVER (PARTITION BY category ORDER BY month) AS prev_month_revenue\n    FROM monthly\n)\nSELECT category, month, monthly_revenue, prev_month_revenue,\n       monthly_revenue - prev_month_revenue AS change,\n       ROUND((monthly_revenue - prev_month_revenue) * 100.0\n             / NULLIF(prev_month_revenue, 0), 2) AS pct_change\nFROM with_prev\nWHERE prev_month_revenue IS NOT NULL\nORDER BY category, month;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h24",
+    "schema": "\nCREATE TABLE orders (\n    order_id   INT PRIMARY KEY,\n    order_date DATE NOT NULL,\n    ship_date  DATE\n);\nINSERT INTO orders VALUES\n (1, '2025-01-06', '2025-01-08'),\n (2, '2025-01-06', '2025-01-10'),\n (3, '2025-01-07', '2025-01-13'),\n (4, '2025-01-09', '2025-01-14'),\n (5, '2025-01-10', '2025-01-16'),\n (6, '2025-01-13', NULL);\n",
+    "solution": "\nWITH tally AS (\n    SELECT TOP 30 ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n\n    FROM sys.all_objects\n),\nshipped AS (\n    SELECT order_id, order_date, ship_date,\n           DATEDIFF(day, order_date, ship_date) AS total_days\n    FROM orders\n    WHERE ship_date IS NOT NULL\n)\nSELECT s.order_id, s.order_date, s.ship_date,\n       (\n           SELECT COUNT(*)\n           FROM tally t\n           WHERE t.n <= s.total_days\n             AND DATEPART(weekday, DATEADD(day, t.n, s.order_date)) NOT IN (1, 7)\n       ) AS business_days\nFROM shipped s\nORDER BY business_days DESC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h25",
+    "schema": "\nCREATE TABLE users (user_id INT PRIMARY KEY, name VARCHAR(100) NOT NULL);\nCREATE TABLE user_logins (login_id INT PRIMARY KEY, user_id INT NOT NULL, login_date DATE NOT NULL);\nINSERT INTO users VALUES (1,'Alice'),(2,'Bob'),(3,'Carol'),(4,'Dave'),(5,'Eve');\nINSERT INTO user_logins VALUES\n (1,1,'2025-02-27'),(2,1,'2025-02-28'),\n (3,2,'2025-02-10'),\n (4,3,'2025-01-20'),\n (5,4,'2024-11-15'),\n (6,5,'2025-02-22'),(7,5,'2025-02-25');\n",
+    "solution": "\nWITH last_login AS (\n    SELECT user_id, MAX(login_date) AS last_login_date\n    FROM user_logins\n    GROUP BY user_id\n)\nSELECT u.user_id, u.name, ll.last_login_date,\n       DATEDIFF(day, ll.last_login_date, '2025-03-01') AS days_inactive,\n       CASE\n           WHEN DATEDIFF(day, ll.last_login_date, '2025-03-01') <= 7  THEN 'Active'\n           WHEN DATEDIFF(day, ll.last_login_date, '2025-03-01') <= 30 THEN 'At Risk'\n           WHEN DATEDIFF(day, ll.last_login_date, '2025-03-01') <= 90 THEN 'Churning'\n           ELSE 'Churned'\n       END AS segment\nFROM users u\nJOIN last_login ll ON ll.user_id = u.user_id\nORDER BY days_inactive ASC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h26",
+    "schema": "\nCREATE TABLE rides (\n    ride_id      INT PRIMARY KEY,\n    request_time VARCHAR(19) NOT NULL\n);\nINSERT INTO rides VALUES\n (1,'2025-01-06 08:15:00'),(2,'2025-01-06 08:42:00'),(3,'2025-01-06 12:10:00'),\n (4,'2025-01-07 07:55:00'),(5,'2025-01-07 08:05:00'),(6,'2025-01-07 08:30:00'),(7,'2025-01-07 18:20:00'),\n (8,'2025-01-08 09:00:00'),(9,'2025-01-08 17:45:00'),(10,'2025-01-08 17:58:00'),(11,'2025-01-08 18:10:00'),\n (12,'2025-01-09 08:00:00'),(13,'2025-01-09 08:20:00'),\n (14,'2025-01-10 07:50:00'),(15,'2025-01-10 08:10:00'),(16,'2025-01-10 08:25:00'),(17,'2025-01-10 12:30:00'),\n (18,'2025-01-11 10:00:00'),(19,'2025-01-11 14:00:00'),\n (20,'2025-01-12 11:00:00'),(21,'2025-01-12 15:00:00'),(22,'2025-01-12 15:30:00');\n",
+    "solution": "\nWITH hourly AS (\n    SELECT DATENAME(weekday, CAST(request_time AS DATETIME))  AS day_of_week,\n           DATEPART(weekday,  CAST(request_time AS DATETIME)) AS day_num,\n           DATEPART(hour,     CAST(request_time AS DATETIME)) AS hour_of_day,\n           COUNT(*) AS request_count\n    FROM rides\n    GROUP BY DATENAME(weekday, CAST(request_time AS DATETIME)),\n             DATEPART(weekday,  CAST(request_time AS DATETIME)),\n             DATEPART(hour,     CAST(request_time AS DATETIME))\n),\nranked AS (\n    SELECT day_of_week, day_num, hour_of_day, request_count,\n           ROW_NUMBER() OVER (PARTITION BY day_of_week ORDER BY request_count DESC) AS rn\n    FROM hourly\n)\nSELECT day_of_week, hour_of_day, request_count AS peak_requests\nFROM ranked\nWHERE rn = 1\nORDER BY day_num;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h27",
+    "schema": "\nCREATE TABLE device_events (\n    event_id   INT PRIMARY KEY,\n    user_id    INT NOT NULL,\n    device_id  VARCHAR(20) NOT NULL,\n    event_type VARCHAR(50) NOT NULL,\n    event_time VARCHAR(19) NOT NULL\n);\nINSERT INTO device_events VALUES\n (1, 1,'DEV-001','login',  '2025-01-10 08:00:00'),\n (2, 1,'DEV-001','action', '2025-01-10 09:15:00'),\n (3, 1,'DEV-001','logout', '2025-01-10 17:30:00'),\n (4, 1,'DEV-002','login',  '2025-01-11 10:00:00'),\n (5, 1,'DEV-002','action', '2025-01-11 11:45:00'),\n (6, 2,'DEV-003','login',  '2025-01-12 14:00:00'),\n (7, 2,'DEV-003','logout', '2025-01-12 15:30:00'),\n (8, 2,'DEV-003','login',  '2025-01-13 09:00:00');\n",
+    "solution": "\nWITH ranked AS (\n    SELECT user_id, device_id, event_type, event_time,\n           ROW_NUMBER() OVER (\n               PARTITION BY user_id, device_id\n               ORDER BY event_time DESC\n           ) AS rn\n    FROM device_events\n)\nSELECT user_id, device_id, event_type, event_time\nFROM ranked\nWHERE rn = 1\nORDER BY user_id, device_id;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h28",
+    "schema": "\nCREATE TABLE customer_records (\n    record_id   INT PRIMARY KEY,\n    customer_id INT NOT NULL,\n    name        VARCHAR(100) NOT NULL,\n    email       VARCHAR(100) NOT NULL,\n    source      VARCHAR(20) NOT NULL\n);\nINSERT INTO customer_records VALUES\n (1, 1,'Alice A','alice@co.com','import'),\n (2, 1,'Alice A','alice@co.com','crm'),\n (3, 2,'Bob B',  'bob@co.com',  'web'),\n (4, 2,'Bob B',  'bob@co.com',  'crm'),\n (5, 3,'Carol C','carol@co.com','import'),\n (6, 3,'Carol C','carol@co.com','web'),\n (7, 4,'Dave D', 'dave@co.com', 'crm');\n",
+    "solution": "\nWITH ranked AS (\n    SELECT customer_id, name, email, source,\n           ROW_NUMBER() OVER (\n               PARTITION BY customer_id\n               ORDER BY CASE source\n                   WHEN 'crm'    THEN 1\n                   WHEN 'web'    THEN 2\n                   WHEN 'import' THEN 3\n                   ELSE 4\n               END\n           ) AS rn\n    FROM customer_records\n)\nSELECT customer_id, name, email, source\nFROM ranked\nWHERE rn = 1\nORDER BY customer_id;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h29",
+    "schema": "\nCREATE TABLE sessions (\n    session_id INT PRIMARY KEY,\n    user_id    INT NOT NULL,\n    start_time VARCHAR(19) NOT NULL,\n    end_time   VARCHAR(19) NOT NULL\n);\nINSERT INTO sessions VALUES\n (1, 1,'2025-01-10 09:00:00','2025-01-10 10:00:00'),\n (2, 1,'2025-01-10 09:30:00','2025-01-10 11:00:00'),\n (3, 1,'2025-01-10 11:30:00','2025-01-10 12:30:00'),\n (4, 2,'2025-01-10 14:00:00','2025-01-10 15:00:00'),\n (5, 2,'2025-01-10 14:45:00','2025-01-10 16:00:00'),\n (6, 3,'2025-01-10 10:00:00','2025-01-10 11:00:00'),\n (7, 3,'2025-01-10 11:00:00','2025-01-10 12:00:00');\n",
+    "solution": "\nSELECT a.user_id,\n       a.session_id AS session_a, b.session_id AS session_b,\n       a.start_time AS a_start,  a.end_time   AS a_end,\n       b.start_time AS b_start,  b.end_time   AS b_end\nFROM sessions a\nJOIN sessions b\n    ON  b.user_id    = a.user_id\n    AND b.session_id > a.session_id\n    AND b.start_time < a.end_time\n    AND b.end_time   > a.start_time\nORDER BY a.user_id, a.start_time;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h30",
+    "schema": "\nCREATE TABLE sales (\n    sale_id   INT PRIMARY KEY,\n    sale_date DATE NOT NULL,\n    amount    DECIMAL(10,2) NOT NULL\n);\nINSERT INTO sales VALUES\n (1,'2025-01-01',100.00),(2,'2025-01-02',200.00),(3,'2025-01-02',150.00),\n (4,'2025-01-03',300.00),(5,'2025-01-05',180.00),(6,'2025-01-06',220.00),\n (7,'2025-01-07',410.00),(8,'2025-01-08',90.00),(9,'2025-01-08',130.00),\n (10,'2025-01-10',270.00);\n",
+    "solution": "\nWITH daily AS (\n    SELECT DISTINCT sale_date FROM sales\n),\nanchored AS (\n    SELECT sale_date,\n           DATEDIFF(day, '2000-01-01', sale_date)\n               - ROW_NUMBER() OVER (ORDER BY sale_date) AS grp\n    FROM daily\n),\nislands AS (\n    SELECT MIN(sale_date) AS streak_start,\n           MAX(sale_date) AS streak_end,\n           COUNT(*)       AS streak_length\n    FROM anchored\n    GROUP BY grp\n)\nSELECT TOP 1 streak_start, streak_end, streak_length\nFROM islands\nORDER BY streak_length DESC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h31",
+    "schema": "\nCREATE TABLE subscriptions (\n    sub_id      INT PRIMARY KEY,\n    customer_id INT NOT NULL,\n    start_date  DATE NOT NULL,\n    end_date    DATE NOT NULL\n);\nINSERT INTO subscriptions VALUES\n (1, 1,'2025-01-01','2025-01-15'),\n (2, 1,'2025-01-10','2025-01-20'),\n (3, 1,'2025-01-22','2025-01-31'),\n (4, 2,'2025-01-05','2025-01-12'),\n (5, 2,'2025-01-12','2025-01-18'),\n (6, 2,'2025-01-25','2025-02-05'),\n (7, 3,'2025-01-01','2025-01-31');\n",
+    "solution": "\nWITH ordered AS (\n    SELECT customer_id, start_date, end_date,\n           MAX(end_date) OVER (\n               PARTITION BY customer_id\n               ORDER BY start_date\n               ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING\n           ) AS prev_max_end\n    FROM subscriptions\n),\nisland_start AS (\n    SELECT customer_id, start_date, end_date,\n           CASE WHEN start_date <= ISNULL(prev_max_end, start_date)\n                THEN 0 ELSE 1 END AS is_new_island\n    FROM ordered\n),\nislands AS (\n    SELECT customer_id, start_date, end_date,\n           SUM(is_new_island) OVER (PARTITION BY customer_id ORDER BY start_date) AS island_id\n    FROM island_start\n)\nSELECT customer_id,\n       MIN(start_date) AS merged_start,\n       MAX(end_date)   AS merged_end\nFROM islands\nGROUP BY customer_id, island_id\nORDER BY customer_id, merged_start;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h32",
+    "schema": "\nCREATE TABLE users (user_id INT PRIMARY KEY, signup_date DATE NOT NULL);\nCREATE TABLE events (event_id INT PRIMARY KEY, user_id INT NOT NULL, event_date DATE NOT NULL);\nINSERT INTO users VALUES\n (1,'2025-01-06'),(2,'2025-01-06'),(3,'2025-01-06'),(4,'2025-01-06'),\n (5,'2025-01-13'),(6,'2025-01-13'),(7,'2025-01-13');\nINSERT INTO events VALUES\n (1,1,'2025-01-10'),(2,2,'2025-01-13'),(3,3,'2025-02-05'),\n (4,1,'2025-02-07'),(5,4,'2025-01-08'),\n (6,5,'2025-01-18'),(7,6,'2025-02-12'),(8,7,'2025-01-20');\n",
+    "solution": "\nWITH cohort AS (\n    SELECT u.user_id,\n           DATEPART(year, u.signup_date) AS signup_yr,\n           DATEPART(week, u.signup_date) AS signup_wk,\n           u.signup_date,\n           MAX(CASE WHEN DATEDIFF(day, u.signup_date, e.event_date) BETWEEN 1 AND 7\n                    THEN 1 ELSE 0 END) AS d7,\n           MAX(CASE WHEN DATEDIFF(day, u.signup_date, e.event_date) BETWEEN 1 AND 30\n                    THEN 1 ELSE 0 END) AS d30\n    FROM users u\n    LEFT JOIN events e ON e.user_id = u.user_id\n    GROUP BY u.user_id, DATEPART(year, u.signup_date),\n             DATEPART(week, u.signup_date), u.signup_date\n)\nSELECT signup_yr, signup_wk,\n       COUNT(*) AS cohort_size,\n       ROUND(SUM(d7)  * 100.0 / COUNT(*), 2) AS d7_retention_pct,\n       ROUND(SUM(d30) * 100.0 / COUNT(*), 2) AS d30_retention_pct\nFROM cohort\nGROUP BY signup_yr, signup_wk\nORDER BY signup_yr, signup_wk;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h33",
+    "schema": "\nCREATE TABLE users (user_id INT PRIMARY KEY, name VARCHAR(100) NOT NULL);\nCREATE TABLE events (event_id INT PRIMARY KEY, user_id INT NOT NULL, event_date DATE NOT NULL);\nINSERT INTO users VALUES (1,'Alice'),(2,'Bob'),(3,'Carol'),(4,'Dave');\nINSERT INTO events VALUES\n (1,1,'2025-01-05'),(2,1,'2025-01-10'),(3,1,'2025-02-20'),\n (4,2,'2025-01-03'),(5,2,'2025-01-08'),(6,2,'2025-01-12'),\n (7,3,'2025-01-01'),(8,3,'2025-02-15'),(9,3,'2025-03-01'),\n (10,4,'2025-01-20'),(11,4,'2025-03-10');\n",
+    "solution": "\nWITH daily AS (\n    SELECT DISTINCT user_id, event_date FROM events\n),\nwith_prev AS (\n    SELECT user_id, event_date,\n           LAG(event_date) OVER (PARTITION BY user_id ORDER BY event_date) AS prev_date\n    FROM daily\n)\nSELECT w.user_id, u.name,\n       w.event_date AS reactivation_date,\n       DATEDIFF(day, w.prev_date, w.event_date) AS gap_days\nFROM with_prev w\nJOIN users u ON u.user_id = w.user_id\nWHERE DATEDIFF(day, w.prev_date, w.event_date) >= 30\nORDER BY gap_days DESC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h34",
+    "schema": "\nCREATE TABLE users (user_id INT PRIMARY KEY, name VARCHAR(100) NOT NULL);\nCREATE TABLE events (\n    event_id   INT PRIMARY KEY,\n    user_id    INT NOT NULL,\n    event_type VARCHAR(50) NOT NULL,\n    event_date DATE NOT NULL,\n    amount     DECIMAL(10,2)\n);\nINSERT INTO users VALUES (1,'Alice'),(2,'Bob'),(3,'Carol'),(4,'Dave');\nINSERT INTO events VALUES\n (1,1,'view',     '2025-02-28',NULL),\n (2,1,'purchase', '2025-02-25',89.00),\n (3,1,'purchase', '2025-02-20',120.00),\n (4,2,'view',     '2025-01-15',NULL),\n (5,2,'purchase', '2025-01-10',45.00),\n (6,3,'view',     '2024-11-01',NULL),\n (7,4,'purchase', '2025-02-10',200.00),\n (8,4,'view',     '2025-02-14',NULL),\n (9,4,'purchase', '2025-02-20',150.00);\n",
+    "solution": "\nWITH features AS (\n    SELECT u.user_id, u.name,\n           DATEDIFF(day, MAX(e.event_date), '2025-03-01') AS days_inactive,\n           COUNT(e.event_id) AS total_events,\n           COUNT(DISTINCT e.event_date) AS active_days,\n           SUM(CASE WHEN e.event_type = 'purchase' THEN 1 ELSE 0 END) AS purchase_count,\n           AVG(CASE WHEN e.event_type = 'purchase' THEN e.amount END) AS avg_order_value\n    FROM users u\n    LEFT JOIN events e ON e.user_id = u.user_id\n    GROUP BY u.user_id, u.name\n)\nSELECT user_id, name, days_inactive, total_events, active_days, purchase_count,\n       ISNULL(avg_order_value, 0) AS avg_order_value,\n       CASE\n           WHEN days_inactive > 60 OR days_inactive IS NULL THEN 'High'\n           WHEN days_inactive > 30                          THEN 'Medium'\n           ELSE 'Low'\n       END AS churn_risk\nFROM features\nORDER BY days_inactive DESC;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h35",
+    "schema": "\nCREATE TABLE products (\n    product_id INT PRIMARY KEY,\n    name       VARCHAR(100) NOT NULL,\n    category   VARCHAR(50) NOT NULL,\n    price      DECIMAL(10,2)\n);\nINSERT INTO products VALUES\n (1,'Laptop Pro',    'Electronics', 1299.99),\n (2,'Wireless Mouse','Electronics', 49.99),\n (3,'Keyboard',      'Electronics', NULL),\n (4,'Monitor',       'Electronics', 399.99),\n (5,'Running Shoes', 'Sports',      89.99),\n (6,'Yoga Mat',      'Sports',      NULL),\n (7,'Water Bottle',  'Sports',      24.99),\n (8,'Coffee Maker',  'Kitchen',     NULL),\n (9,'Blender',       'Kitchen',     79.99),\n (10,'Toaster',      'Kitchen',     39.99);\n",
+    "solution": "\nWITH cat_avg AS (\n    SELECT category,\n           AVG(CAST(price AS FLOAT)) AS avg_price\n    FROM products\n    WHERE price IS NOT NULL\n    GROUP BY category\n)\nSELECT p.product_id, p.name, p.category,\n       p.price AS original_price,\n       ROUND(ISNULL(p.price, CAST(a.avg_price AS DECIMAL(10,2))), 2) AS effective_price\nFROM products p\nLEFT JOIN cat_avg a ON a.category = p.category\nORDER BY p.category, p.name;\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h36",
+    "schema": "\nCREATE TABLE customers (customer_id INT PRIMARY KEY, name VARCHAR(100) NOT NULL);\nCREATE TABLE orders (\n    order_id     INT PRIMARY KEY,\n    customer_id  INT NOT NULL,\n    ship_country VARCHAR(10)\n);\nINSERT INTO customers VALUES (1,'Alice'),(2,'Bob'),(3,'Carol'),(4,'Dave');\nINSERT INTO orders VALUES\n (101,1,'US'),(102,1,'US'),(103,1,'CA'),\n (104,2,'US'),(105,2,'US'),\n (106,3,'US'),(107,3,NULL),\n (108,4,'US');\n",
+    "solution": "\n-- Correct: NOT EXISTS is NULL-safe\nSELECT c.customer_id, c.name\nFROM customers c\nWHERE NOT EXISTS (\n    SELECT 1 FROM orders o\n    WHERE o.customer_id = c.customer_id\n      AND o.ship_country <> 'US'\n)\nORDER BY c.name;\n-- Note: NOT IN (SELECT ship_country FROM orders WHERE ship_country <> 'US')\n-- would return 0 rows because ship_country has a NULL, and\n-- x NOT IN (..., NULL) evaluates to UNKNOWN, not TRUE.\n",
+    "order_matters": false,
+    "tsql": true
+  },
+  {
+    "id": "h37",
+    "schema": "\nCREATE TABLE orders (order_id INT PRIMARY KEY, customer_id INT NOT NULL, order_date DATE NOT NULL);\nCREATE TABLE order_items (\n    item_id    INT PRIMARY KEY,\n    order_id   INT NOT NULL,\n    product_id INT NOT NULL,\n    quantity   INT NOT NULL\n);\nINSERT INTO orders VALUES\n (1001,1,'2025-01-05'),(1002,2,'2025-01-06'),(1003,3,'2025-01-07'),(1004,4,'2025-01-08');\nINSERT INTO order_items VALUES\n (1,1001,101,2),(2,1001,102,1),\n (3,1002,103,3),\n (4,1005,104,1),\n (5,1006,101,0),\n (6,1003,102,-1);\n",
+    "solution": "\nSELECT 'items_with_zero_quantity' AS check_name,\n       COUNT(*) AS violation_count\nFROM order_items\nWHERE quantity <= 0\nUNION ALL\nSELECT 'orders_without_items',\n       COUNT(*)\nFROM orders o\nWHERE NOT EXISTS (SELECT 1 FROM order_items oi WHERE oi.order_id = o.order_id)\nUNION ALL\nSELECT 'orphaned_order_items',\n       COUNT(*)\nFROM order_items oi\nWHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.order_id = oi.order_id)\nORDER BY check_name;\n",
+    "order_matters": false,
+    "tsql": true
   }
 ]

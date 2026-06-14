@@ -19,7 +19,7 @@ export const PATTERNS = [
       'ROWS BETWEEN for explicit rolling windows',
       'LAG/LEAD for period-over-period metrics without a self-join',
     ],
-    questionIds: ['m01','m03','m06','m16','m18','h02','h03','h08','h09','h14','ip02','ip04','ip05'],
+    questionIds: ['m01','m03','m06','m16','m18','h02','h03','h08','h09','h14','ip02','ip04','ip05','m19','m20','m21','h15','h16','h17'],
   },
   {
     id: 'joins',
@@ -37,7 +37,7 @@ export const PATTERNS = [
       'Fan-out awareness when joining through many-to-many tables',
       'Correct join direction — which table is the source of truth',
     ],
-    questionIds: ['e03','e07','e09','e11','m04','m08','m10','h11','sqlz03','sqlz04','ext02'],
+    questionIds: ['e03','e07','e09','e11','m04','m08','m10','h11','sqlz03','sqlz04','ext02','m22','m23','m24','m25','h18','h19','h20'],
   },
   {
     id: 'aggregation',
@@ -55,7 +55,7 @@ export const PATTERNS = [
       'AVG(CASE WHEN cond THEN 1 ELSE 0 END) for conditional rates without division errors',
       'Relational division: HAVING COUNT(DISTINCT x) = (SELECT COUNT(DISTINCT x))',
     ],
-    questionIds: ['e01','e05','e06','e08','e10','e15','m07','m12','m14','m15','m17','sqlz02','sqlz05'],
+    questionIds: ['e01','e05','e06','e08','e10','e15','m07','m12','m14','m15','m17','sqlz02','sqlz05','m26','m27','m28','m29','h21','h22','h23'],
   },
   {
     id: 'deduplication',
@@ -73,7 +73,7 @@ export const PATTERNS = [
       'Awareness that GROUP BY + MAX returns the value but not the full row',
       'Handling ties — when two rows share the same max timestamp',
     ],
-    questionIds: ['e04','m05','m09','h06','h07','ext01'],
+    questionIds: ['e04','m05','m09','h06','h07','ext01','m34','m35','m36','h27','h28'],
   },
   {
     id: 'date_logic',
@@ -91,7 +91,7 @@ export const PATTERNS = [
       'Date spine joins when gaps in source data would break LAG comparisons',
       'DATEPART for extracting components: weekday, month, quarter, hour',
     ],
-    questionIds: ['e16','m02','m11'],
+    questionIds: ['e16','m02','m11','m30','m31','m32','m33','h24','h25','h26'],
   },
   {
     id: 'gaps_islands',
@@ -109,7 +109,7 @@ export const PATTERNS = [
       'Current streak vs longest historical streak (different queries)',
       'Interval merging with a running MAX of end times for overlapping ranges',
     ],
-    questionIds: ['h01','h04','h10','h12','ip03'],
+    questionIds: ['h01','h04','h10','h12','ip03','m37','m38','h29','h30','h31'],
   },
   {
     id: 'retention',
@@ -127,7 +127,7 @@ export const PATTERNS = [
       'DATEDIFF(month, cohort_date, activity_date) for months-since-cohort column',
       'NULLIF in the denominator for MoM growth rate to avoid division by zero',
     ],
-    questionIds: ['h05','h13','ip01'],
+    questionIds: ['h05','h13','ip01','m39','m40','h32','h33','h34'],
   },
   {
     id: 'filtering',
@@ -145,7 +145,7 @@ export const PATTERNS = [
       'UNION vs UNION ALL — deduplication cost is real; prefer UNION ALL when safe',
       'EXISTS short-circuits on first match; more efficient than IN on large subqueries',
     ],
-    questionIds: ['e02','e13','m13','sqlz01'],
+    questionIds: ['e02','e13','m13','sqlz01','m41','m42','m43','h35','h36'],
   },
   {
     id: 'data_quality',
@@ -163,7 +163,7 @@ export const PATTERNS = [
       'Pattern matching (LIKE, string functions) to find malformed records',
       'Window functions to detect sequences that should never repeat',
     ],
-    questionIds: ['e12','e14'],
+    questionIds: ['e12','e14','m44','m45','h37'],
   },
 ]
 

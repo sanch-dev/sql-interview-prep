@@ -100,9 +100,10 @@ app.post('/api/submit', async (req, res) => {
   const q = questionMap[questionId]
   if (!q) return res.status(404).json({ error: `Unknown question: ${questionId}` })
 
+  const refDialect = q.tsql ? 'mssql' : 'sqlite'
   const [userResult, refResult] = await Promise.all([
     execInTransaction(questionId, sql.trim(), dialect),
-    execInTransaction(questionId, q.solution.trim(), 'sqlite'), // solution is always standard SQL
+    execInTransaction(questionId, q.solution.trim(), refDialect),
   ])
 
   const correct = !userResult.error && !refResult.error

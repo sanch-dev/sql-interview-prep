@@ -19,8 +19,9 @@ from q_interview_patterns import INTERVIEW_PATTERNS
 from q_external_sources import EXTERNAL_SOURCES
 from q_sqlzoo_curated import SQLZOO_PROBLEMS
 from q_debug_challenges import DEBUG_CHALLENGES
+from q_expansion import EXPANSION_MEDIUM, EXPANSION_HARD
 
-ALL = EASY + EASY_MORE + MEDIUM + MEDIUM_MORE + HARD + HARD_MORE + INTERVIEW_PATTERNS + EXTERNAL_SOURCES + SQLZOO_PROBLEMS + DEBUG_CHALLENGES
+ALL = EASY + EASY_MORE + MEDIUM + MEDIUM_MORE + HARD + HARD_MORE + INTERVIEW_PATTERNS + EXTERNAL_SOURCES + SQLZOO_PROBLEMS + DEBUG_CHALLENGES + EXPANSION_MEDIUM + EXPANSION_HARD
 OUT = Path(__file__).parent.parent / "docs" / "js" / "questions.js"
 
 
@@ -48,6 +49,9 @@ def main():
             failures += 1
             continue
         ids.add(qid)
+        if q.get("tsql"):
+            print(f"  SKIP {qid} [{q['difficulty']:<6}] {q['title']} (T-SQL — skipping SQLite validation)")
+            continue
         try:
             cols, rows = run_question(q)
             if not rows:
@@ -82,7 +86,8 @@ def main():
 
     # Emit questions.json for both the standalone api/ server and Vercel serverless functions
     api_payload = [
-        {"id": q["id"], "schema": q["schema"], "solution": q["solution"], "order_matters": q.get("order_matters", False)}
+        {"id": q["id"], "schema": q["schema"], "solution": q["solution"],
+         "order_matters": q.get("order_matters", False), "tsql": q.get("tsql", False)}
         for q in ALL
     ]
     api_json = json.dumps(api_payload, indent=2, ensure_ascii=False)
