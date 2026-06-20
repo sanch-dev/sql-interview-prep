@@ -49,8 +49,8 @@ export default function Workspace({ question, allQuestions, onSelect, onBack, th
 
   useEffect(() => {
     setSampleTables({})
-    getTableData(question.id).then(setSampleTables)
-  }, [question.id])
+    getTableData(question.id, question.schema).then(setSampleTables)
+  }, [question.id, question.schema])
 
   const handleHintReveal = useCallback(() => {
     hintsRevealedRef.current++

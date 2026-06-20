@@ -27,7 +27,104 @@ export async function submitSQL(sql, questionId, dialect = 'sqlite') {
   }
 }
 
-export async function getTableData(questionId) {
+export function parseSchemaForSampleData(schema) {
+  if (!schema) return {}
+
+  const tables = {}
+
+  // Find all CREATE TABLE statements
+  const createTableRegex = /CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?["'`\[]?(\w+)["'`\]]?\s*\(([\s\S]*?)\);/gi
+  let tableMatch
+  const tableDefinitions = {}
+
+  while ((tableMatch = createTableRegex.exec(schema)) !== null) {
+    const tableName = tableMatch[1]
+    const columnDefs = tableMatch[2]
+    const columns = []
+
+    // Extract column names
+    const columnRegex = /(\w+)\s+/g
+    let colMatch
+    while ((colMatch = columnRegex.exec(columnDefs)) !== null) {
+      columns.push(colMatch[1])
+    }
+
+    tableDefinitions[tableName] = columns
+  }
+
+  // Find all INSERT statements
+  const insertRegex = /INSERT\s+INTO\s+["'`\[]?(\w+)["'`\]]?\s+VALUES\s*([\s\S]*?)(?=;|INSERT|$)/gi
+  let insertMatch
+
+  while ((insertMatch = insertRegex.exec(schema)) !== null) {
+    const tableName = insertMatch[1]
+    const valuesStr = insertMatch[2]
+    const columns = tableDefinitions[tableName] || []
+
+    if (!tables[tableName]) {
+      tables[tableName] = { columns, rows: [] }
+    }
+
+    // Parse value tuples: (val1, val2, val3), (val4, val5, val6), ...
+    const valueRegex = /\((.*?)\)(?=\s*,|\s*$)/g
+    let valueMatch
+    while ((valueMatch = valueRegex.exec(valuesStr)) !== null) {
+      const values = valueMatch[1]
+      const parts = []
+      let current = ''
+      let inQuote = false
+      let quoteChar = null
+
+      for (let i = 0; i < values.length; i++) {
+        const char = values[i]
+        if ((char === '"' || char === "'" || char === '`') && values[i - 1] !== '\\') {
+          if (!inQuote) {
+            inQuote = true
+            quoteChar = char
+          } else if (char === quoteChar) {
+            inQuote = false
+            quoteChar = null
+          } else {
+            current += char
+          }
+        } else if (char === ',' && !inQuote) {
+          parts.push(current.trim())
+          current = ''
+        } else {
+          current += char
+        }
+      }
+      if (current.trim()) parts.push(current.trim())
+
+      // Build row object
+      const row = {}
+      columns.forEach((col, idx) => {
+        let val = parts[idx]?.trim() || null
+        // Remove quotes if present
+        if (val && ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith('"') && val.endsWith('"')))) {
+          val = val.slice(1, -1)
+        }
+        row[col] = val
+      })
+
+      tables[tableName].rows.push(row)
+    }
+  }
+
+  return tables
+}
+
+export async function getTableData(questionId, schema) {
+  // Try to parse from schema first
+  if (schema) {
+    try {
+      return parseSchemaForSampleData(schema)
+    } catch (err) {
+      console.warn('Failed to parse schema:', err)
+    }
+  }
+
+  // Fallback to API (for backward compatibility)
   try {
     const res = await fetch(`${API}/api/questions/${questionId}/tables`)
     return await res.json()
