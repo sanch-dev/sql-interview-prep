@@ -42,18 +42,18 @@ export function parseSchemaForSampleData(schema) {
     const columnDefs = tableMatch[2]
     const columns = []
 
-    // Extract column names
-    const columnRegex = /(\w+)\s+/g
-    let colMatch
-    while ((colMatch = columnRegex.exec(columnDefs)) !== null) {
-      columns.push(colMatch[1])
+    // Extract column names - first word of each line/segment
+    const columnLines = columnDefs.split(',')
+    for (const line of columnLines) {
+      const match = line.trim().match(/^(\w+)/)
+      if (match) columns.push(match[1])
     }
 
     tableDefinitions[tableName] = columns
   }
 
   // Find all INSERT statements
-  const insertRegex = /INSERT\s+INTO\s+["'`\[]?(\w+)["'`\]]?\s+VALUES\s*([\s\S]*?)(?=;|INSERT|$)/gi
+  const insertRegex = /INSERT\s+INTO\s+["'`\[]?(\w+)["'`\]]?\s+VALUES\s*([\s\S]*?)(?=;|INSERT|CREATE|$)/gi
   let insertMatch
 
   while ((insertMatch = insertRegex.exec(schema)) !== null) {
@@ -66,18 +66,40 @@ export function parseSchemaForSampleData(schema) {
     }
 
     // Parse value tuples: (val1, val2, val3), (val4, val5, val6), ...
-    const valueRegex = /\((.*?)\)(?=\s*,|\s*$)/g
-    let valueMatch
-    while ((valueMatch = valueRegex.exec(valuesStr)) !== null) {
-      const values = valueMatch[1]
+    let depth = 0
+    let current = ''
+    let tuples = []
+
+    for (let i = 0; i < valuesStr.length; i++) {
+      const char = valuesStr[i]
+
+      if (char === '(') {
+        depth++
+        if (depth === 1) current = ''
+        else current += char
+      } else if (char === ')') {
+        depth--
+        if (depth === 0) {
+          if (current.trim()) tuples.push(current)
+          current = ''
+        } else {
+          current += char
+        }
+      } else if (depth > 0) {
+        current += char
+      }
+    }
+
+    // Parse each tuple
+    for (const tuple of tuples) {
       const parts = []
       let current = ''
       let inQuote = false
       let quoteChar = null
 
-      for (let i = 0; i < values.length; i++) {
-        const char = values[i]
-        if ((char === '"' || char === "'" || char === '`') && values[i - 1] !== '\\') {
+      for (let i = 0; i < tuple.length; i++) {
+        const char = tuple[i]
+        if ((char === '"' || char === "'") && tuple[i - 1] !== '\\') {
           if (!inQuote) {
             inQuote = true
             quoteChar = char
@@ -104,7 +126,7 @@ export function parseSchemaForSampleData(schema) {
         if (val && ((val.startsWith("'") && val.endsWith("'")) || (val.startsWith('"') && val.endsWith('"')))) {
           val = val.slice(1, -1)
         }
-        row[col] = val
+        row[col] = val === 'NULL' ? null : val
       })
 
       tables[tableName].rows.push(row)
