@@ -22,12 +22,22 @@ module.exports = async (req, res) => {
 
     const supabase = createClient(supabaseUrl, supabaseKey)
 
+    // Set the auth token so RLS policies work
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
     if (userError || !user) {
       return res.status(401).json({ error: 'Unauthorized' })
     }
 
-    const { data, error } = await supabase
+    // Create authenticated client with the user's token
+    const authenticatedSupabase = createClient(supabaseUrl, supabaseKey, {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      }
+    })
+
+    const { data, error } = await authenticatedSupabase
       .from('profiles')
       .select('claude_api_key, id, email')
       .eq('id', user.id)
