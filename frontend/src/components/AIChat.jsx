@@ -1,10 +1,9 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { supabase } from '../lib/supabase'
 import '../styles/ai-chat.css'
 
 export default function AIChat({ question, currentSQL, queryResult }) {
-  const { user } = useAuth()
+  const { user, session } = useAuth()
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -13,8 +12,8 @@ export default function AIChat({ question, currentSQL, queryResult }) {
 
   useEffect(() => {
     // Check if user has API key configured
-    if (user) checkApiKey()
-  }, [user])
+    if (user && session?.access_token) checkApiKey()
+  }, [user, session])
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -22,7 +21,6 @@ export default function AIChat({ question, currentSQL, queryResult }) {
 
   const checkApiKey = async () => {
     try {
-      const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) {
         console.error('No auth session')
         return
@@ -51,7 +49,6 @@ export default function AIChat({ question, currentSQL, queryResult }) {
     setLoading(true)
 
     try {
-      const { data: { session } } = await supabase.auth.getSession()
       if (!session?.access_token) {
         setMessages((prev) => [...prev, { role: 'assistant', content: '❌ Authentication required' }])
         setLoading(false)
