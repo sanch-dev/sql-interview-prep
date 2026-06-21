@@ -20,10 +20,15 @@ module.exports = async (req, res) => {
   const { message, question, currentSQL, queryResult } = req.body
 
   try {
-    const supabase = createClient(
-      process.env.VITE_SUPABASE_URL,
-      process.env.VITE_SUPABASE_ANON_KEY
-    )
+    const supabaseUrl = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL
+    const supabaseKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.error('Supabase env vars not set')
+      return res.status(500).json({ error: 'Server configuration error' })
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey)
 
     const { data: { user }, error: userError } = await supabase.auth.getUser(token)
     if (userError || !user) {
