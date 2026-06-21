@@ -289,7 +289,7 @@ export default function EditorPane({ question, initialValue, results, refResult,
 
       <div className="resize-handle" onMouseDown={startResize} title="Drag to resize" />
 
-      <div className="results-and-ai-container">
+      <div className="results-and-ai-container" style={{ height: `${resultsHeight}px`, flexShrink: 0 }}>
         <div className="results-section" style={{ flex: '1 1 60%' }}>
           <ResultsPanel
             result={results}
