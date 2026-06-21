@@ -1,7 +1,27 @@
+.results-and-ai-container {
+  display: flex;
+  gap: 0;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+.results-section {
+  display: flex;
+  overflow: hidden;
+}
+
+.ai-section {
+  display: flex;
+  overflow: hidden;
+  min-width: 250px;
+}
+
 .ai-chat-container {
   display: flex;
   flex-direction: column;
   height: 100%;
+  width: 100%;
   background: var(--bg-secondary);
   border-left: 1px solid var(--border-color);
   overflow: hidden;

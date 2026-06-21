@@ -9,6 +9,7 @@ import { autocompletion } from '@codemirror/autocomplete'
 import { toggleLineComment } from '@codemirror/commands'
 import ResultsPanel from './ResultsPanel'
 import PatternDebrief from './PatternDebrief'
+import AIChat from './AIChat'
 
 const SQL_KEYWORDS = [
   'SELECT','DISTINCT','FROM','WHERE','GROUP BY','HAVING','ORDER BY','LIMIT','OFFSET',
@@ -288,14 +289,25 @@ export default function EditorPane({ question, initialValue, results, refResult,
 
       <div className="resize-handle" onMouseDown={startResize} title="Drag to resize" />
 
-      <ResultsPanel
-        result={results}
-        refResult={refResult}
-        isRunning={isRunning}
-        tableNames={tableNames}
-        dialectKey={DIALECT_KEY}
-        height={resultsHeight}
-      />
+      <div className="results-and-ai-container">
+        <div className="results-section" style={{ flex: '1 1 60%' }}>
+          <ResultsPanel
+            result={results}
+            refResult={refResult}
+            isRunning={isRunning}
+            tableNames={tableNames}
+            dialectKey={DIALECT_KEY}
+            height={resultsHeight}
+          />
+        </div>
+        <div className="ai-section" style={{ flex: '1 1 40%' }}>
+          <AIChat
+            question={question}
+            currentSQL={code}
+            queryResult={results}
+          />
+        </div>
+      </div>
 
       {showDebrief && (
         <PatternDebrief

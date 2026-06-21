@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useAuth } from '../contexts/AuthContext'
 import { useProgress } from '../contexts/ProgressContext'
+import SettingsModal from './SettingsModal'
 
 const DAILY_GOAL = 3
 
@@ -14,6 +16,7 @@ const NAV_TABS = [
 export default function Header({ theme, onToggleTheme, currentPage, onChangePage, onOpenSidebar }) {
   const { user, signOut }  = useAuth()
   const { solvedCount, streak, todaySolved, readinessScore } = useProgress()
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const totalQuestions = (window.QUESTIONS || []).filter(q => q.type !== 'debug').length
 
   return (
@@ -64,6 +67,14 @@ export default function Header({ theme, onToggleTheme, currentPage, onChangePage
 
           <button
             className="icon-btn"
+            onClick={() => setSettingsOpen(true)}
+            title="Settings"
+          >
+            ⚙️
+          </button>
+
+          <button
+            className="icon-btn"
             onClick={onToggleTheme}
             title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
@@ -78,6 +89,8 @@ export default function Header({ theme, onToggleTheme, currentPage, onChangePage
         </div>
 
       </div>
+
+      <SettingsModal isOpen={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </header>
   )
 }
