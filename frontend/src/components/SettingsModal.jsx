@@ -41,8 +41,7 @@ export default function SettingsModal({ isOpen, onClose }) {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ claude_api_key: apiKey })
-        .eq('id', user.id)
+        .upsert({ id: user.id, claude_api_key: apiKey })
 
       if (error) throw error
       setMessage('✅ API key saved successfully!')
