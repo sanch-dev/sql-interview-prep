@@ -27,24 +27,33 @@ module.exports = async (req, res) => {
       return res.status(401).json({ error: 'Unauthorized' })
     }
 
-    console.log('Checking API key for user:', user.id)
-
     const { data, error } = await supabase
       .from('profiles')
-      .select('claude_api_key')
+      .select('claude_api_key, id, email')
       .eq('id', user.id)
       .single()
 
-    console.log('Query result:', { data, error })
-
     if (error && error.code !== 'PGRST116') {
-      console.error('Database query error:', error)
-      throw error
+      return res.json({
+        hasKey: false,
+        debug: {
+          userId: user.id,
+          error: error.message,
+          code: error.code
+        }
+      })
     }
 
     const hasKey = data?.claude_api_key ? true : false
-    console.log('Has API key:', hasKey, 'Key value:', data?.claude_api_key?.substring(0, 20))
-    res.json({ hasKey })
+    res.json({
+      hasKey,
+      debug: {
+        userId: user.id,
+        rowExists: !!data,
+        keyExists: !!data?.claude_api_key,
+        email: data?.email
+      }
+    })
   } catch (err) {
     console.error('Error checking AI key:', err)
     res.status(500).json({ error: 'Failed to check AI key' })
