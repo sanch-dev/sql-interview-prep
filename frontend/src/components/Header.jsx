@@ -81,11 +81,13 @@ export default function Header({ theme, onToggleTheme, currentPage, onChangePage
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
 
-          <div className="user-menu">
-            <span className="user-avatar">{user.email[0].toUpperCase()}</span>
-            <span className="user-email">{user.email}</span>
-            <button className="btn btn-ghost btn-sm" onClick={signOut}>Sign out</button>
-          </div>
+          {user && (
+            <div className="user-menu">
+              <span className="user-avatar">{user.email[0].toUpperCase()}</span>
+              <span className="user-email">{user.email}</span>
+              <button className="btn btn-ghost btn-sm" onClick={signOut}>Sign out</button>
+            </div>
+          )}
         </div>
 
       </div>

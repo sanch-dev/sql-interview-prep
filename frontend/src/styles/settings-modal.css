@@ -12,13 +12,15 @@
 }
 
 .settings-modal {
-  background: var(--bg-secondary);
+  background: var(--bg-secondary, #ffffff);
   border-radius: 12px;
   width: 90%;
-  max-width: 500px;
+  max-width: 520px;
   max-height: 80vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
+  backdrop-filter: none;
 }
 
 .settings-header {
