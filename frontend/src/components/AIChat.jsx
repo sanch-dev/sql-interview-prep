@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useAuth } from '../contexts/AuthContext'
+import { supabase } from '../lib/supabase'
 import '../styles/ai-chat.css'
 
 export default function AIChat({ question, currentSQL, queryResult }) {
@@ -12,7 +13,7 @@ export default function AIChat({ question, currentSQL, queryResult }) {
 
   useEffect(() => {
     // Check if user has API key configured
-    checkApiKey()
+    if (user) checkApiKey()
   }, [user])
 
   useEffect(() => {
@@ -21,9 +22,18 @@ export default function AIChat({ question, currentSQL, queryResult }) {
 
   const checkApiKey = async () => {
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        console.error('No auth session')
+        return
+      }
+
       const response = await fetch('/api/check-ai-key', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
       })
       const data = await response.json()
       setHasApiKey(data.hasKey)
@@ -41,9 +51,19 @@ export default function AIChat({ question, currentSQL, queryResult }) {
     setLoading(true)
 
     try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session?.access_token) {
+        setMessages((prev) => [...prev, { role: 'assistant', content: '❌ Authentication required' }])
+        setLoading(false)
+        return
+      }
+
       const response = await fetch('/api/ai-chat', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
         body: JSON.stringify({
           message: userMessage,
           question: {
